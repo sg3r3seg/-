@@ -8,6 +8,8 @@
 2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.0.0-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
 3. צור חשבון באתר שנפתח (`http://127.0.0.1:8787`), רכוש במצב Sandbox, והזן את קוד ההפעלה ב-LiveX.
 
+🔑 **[מדריך KEYNAME — איך מזינים את קוד ההפעלה](KEYNAME.md)**
+
 ---
 
 LiveX היא אפליקציית Windows לניהול שידורים חיים ב-TikTok LIVE, ‏YouTube LIVE, ‏Kick ו-Twitch, יחד עם שרת רישוי/חשבונות ואתר.

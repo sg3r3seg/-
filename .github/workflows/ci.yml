@@ -69,9 +69,9 @@ jobs:
           git archive --format=zip -o "$SRV" HEAD:server   # server code only; keys are never committed
           (cd dist && sha256sum "LiveX-Setup-${VERSION}.exe" LiveX-Test-Server.zip | tee SHA256SUMS.txt)
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$FILE" "$SRV" dist/SHA256SUMS.txt --clobber
+            gh release upload "$TAG" "$FILE" "$SRV" dist/SHA256SUMS.txt KEYNAME.md --clobber
             gh release edit "$TAG" --notes-file .github/release-notes.md --target "$GITHUB_SHA"
           else
-            gh release create "$TAG" "$FILE" "$SRV" dist/SHA256SUMS.txt --prerelease --target "$GITHUB_SHA" \
+            gh release create "$TAG" "$FILE" "$SRV" dist/SHA256SUMS.txt KEYNAME.md --prerelease --target "$GITHUB_SHA" \
               --title "LiveX ${VERSION} — Preview (test build)" --notes-file .github/release-notes.md
           fi
