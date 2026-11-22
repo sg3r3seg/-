@@ -23,6 +23,12 @@ function createEngine(base) {
 
   const consumers = [ctx.insights, ctx.alerts, ctx.tts, ctx.chat, ctx.timer, ctx.giveaway, ctx.goals];
   hub.on('event', (e) => {
+    // Moderation runs first; blocked chat is still counted in analytics but is never
+    // read by TTS, shown on the chat overlay, used for commands or giveaway entries.
+    if (e.type === 'chat' && !e.test && (ctx.session.has('pro') || ctx.session.has('tts'))) {
+      try { e.blocked = ctx.chat.moderate(e) || undefined; } catch { /* ignore */ }
+      if (e.blocked) ctx.chat.onBlocked(e);
+    }
     for (const c of consumers) {
       try { c.onEvent(e); } catch (err) { hub.log('error', 'engine', err.message); }
     }

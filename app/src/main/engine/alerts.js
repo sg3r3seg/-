@@ -17,7 +17,8 @@ module.exports = (ctx) => {
   const save = (d) => { ctx.store.set('alerts', d); return d; };
 
   function show(rule, evt, test = false) {
-    const alert = { id: uid(), type: evt.type, platform: evt.platform, text: fill(rule.template, evt), user: evt.user?.name, avatar: evt.user?.avatar, image: evt.image, durationMs: rule.durationMs, test };
+    const media = rule.media ? ctx.overlay.mediaUrl(rule.media) : null;
+    const alert = { id: uid(), type: evt.type, platform: evt.platform, text: fill(rule.template, evt), user: evt.user?.name, avatar: evt.user?.avatar, image: media || evt.image, custom: !!media, durationMs: rule.durationMs, test };
     ctx.overlay.broadcast('alerts', 'alert', alert);
     if (rule.soundId) ctx.send('sound:play', { id: rule.soundId, source: 'alert' });
     return alert;
@@ -29,6 +30,7 @@ module.exports = (ctx) => {
       const rules = (Array.isArray(input?.rules) ? input.rules : []).slice(0, 50).filter((r) => TYPES.includes(r.type)).map((r) => ({
         id: clampStr(r.id || uid(), 20), type: r.type, enabled: !!r.enabled, minAmount: num(r.minAmount, 0, 0, 1e9),
         template: clampStr(r.template, 200), soundId: clampStr(r.soundId, 40), durationMs: num(r.durationMs, 5000, 1000, 60000),
+        media: /^[a-z0-9]{8}\.(png|jpe?g|gif|webp)$/.test(r.media || '') ? r.media : '',
       }));
       return save({ enabled: !!input?.enabled, rules });
     },

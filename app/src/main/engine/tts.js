@@ -75,6 +75,7 @@ module.exports = (ctx) => {
       if ('activeProfileId' in input) next.activeProfileId = clampStr(input.activeProfileId, 20);
       if ('outputDeviceId' in input) next.outputDeviceId = clampStr(input.outputDeviceId, 200);
       ctx.store.set('tts', next);
+      if (s.enabled && !next.enabled) { queue.length = 0; if (current) { ctx.send('tts:stop', { id: current.id }); done(current.id); } emit(); }
       return next;
     },
     saveProfile(p) {
@@ -98,6 +99,7 @@ module.exports = (ctx) => {
       if (!s.enabled || !ctx.session.has('tts') || e.test) return;
       let text = null;
       const name = s.readUsername && e.user?.name ? `${e.user.name}: ` : '';
+      if (e.type === 'chat' && e.blocked) return;
       if (e.type === 'chat' && s.readChat) {
         if (s.skipCommands && /^[!/]/.test(e.text || '')) return;
         if (s.onlyMods && !e.user?.isMod) return;
@@ -108,7 +110,11 @@ module.exports = (ctx) => {
       else if (e.type === 'sub' && s.readSubs) text = `${e.user?.name || ''} subscribed`;
       if (text) enqueue({ text, user: e.user?.name, platform: e.platform, source: e.type });
     },
-    say(text, source = 'manual') { const t = clampStr(text, 500).trim(); return t ? enqueue({ text: t, source, platform: 'livex' }) : null; },
+    say(text, source = 'manual') {
+      if (!settings().enabled) throw Object.assign(new Error('LiveX TTS is turned off'), { code: 'TTS_DISABLED' });
+      const t = clampStr(text, 500).trim(); return t ? enqueue({ text: t, source, platform: 'livex' }) : null;
+    },
+    failed(id, message) { ctx.hub.log('warn', 'tts', `speech failed: ${String(message).slice(0, 200)}`); done(id); },
     pause() { paused = true; emit(); return state(); },
     resume() { paused = false; emit(); pump(); return state(); },
     skip() { if (current) { ctx.send('tts:stop', { id: current.id }); done(current.id); } return state(); },

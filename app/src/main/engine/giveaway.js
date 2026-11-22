@@ -31,7 +31,7 @@ module.exports = (ctx) => {
       push(); return win;
     },
     onEvent(e) {
-      if (!g.open || e.type !== 'chat' || e.test || !ctx.session.has('pro')) return;
+      if (!g.open || e.type !== 'chat' || e.test || e.blocked || !ctx.session.has('pro')) return;
       if (String(e.text || '').trim().toLowerCase().split(/\s/)[0] !== g.keyword) return;
       if (g.allowModsOnly && !e.user?.isMod) return;
       const key = userKey(e);

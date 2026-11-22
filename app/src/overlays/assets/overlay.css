@@ -9,3 +9,10 @@ body.lx-offline::after { content: ''; }
 @keyframes slide { from { transform: translateX(-30px); opacity: 0; } to { transform: none; opacity: 1; } }
 [dir=rtl] .slide { animation-name: slide-rtl; }
 @keyframes slide-rtl { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Position/alignment chosen in the Overlay Editor (only applied when set). */
+body[data-align], body[data-position] { display: flex !important; height: 100vh; padding: 24px !important; }
+body:not(.col)[data-align=start] { justify-content: flex-start !important; } body:not(.col)[data-align=center] { justify-content: center !important; } body:not(.col)[data-align=end] { justify-content: flex-end !important; }
+body:not(.col)[data-position=top] { align-items: flex-start !important; } body:not(.col)[data-position=middle] { align-items: center !important; } body:not(.col)[data-position=bottom] { align-items: flex-end !important; }
+body.col[data-position=top] { justify-content: flex-start !important; } body.col[data-position=middle] { justify-content: center !important; } body.col[data-position=bottom] { justify-content: flex-end !important; }
+body.col[data-align=start] { align-items: flex-start !important; } body.col[data-align=center] { align-items: center !important; } body.col[data-align=end] { align-items: flex-end !important; }

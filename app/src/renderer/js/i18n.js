@@ -158,6 +158,12 @@ const D = {
   security_hint: ['Passwords are never stored on this computer. Your session is kept encrypted with Windows DPAPI and can be revoked from any device.', 'סיסמאות לעולם אינן נשמרות במחשב. החיבור נשמר מוצפן ב-Windows DPAPI וניתן לביטול מכל מכשיר.'], manage_devices: ['Manage devices', 'ניהול מכשירים'],
   hotkeys: ['Global hotkeys', 'קיצורי מקשים גלובליים'], hotkey_highlight: ['Mark highlight', 'סימון רגע נבחר'], hotkey_tts_skip: ['Skip TTS message', 'דילוג על הודעת TTS'], registered: ['Registered', 'רשומים'],
   advanced: ['Advanced', 'מתקדם'], overlay_port: ['Overlay server port', 'פורט שרת Overlays'], remote_port: ['Remote control port', 'פורט שלט רחוק'], updates: ['Updates', 'עדכונים'], auto_check_updates: ['Check for updates automatically', 'בדיקת עדכונים אוטומטית'],
+  alert_media: ['Image / GIF', 'תמונה / GIF'], alert_media_none: ['Viewer avatar (if provided)', 'תמונת הצופה (אם סופקה)'], choose_image: ['Choose image/GIF', 'בחירת תמונה/GIF'],
+  moderation: ['Moderation', 'ניהול וסינון'], moderation_hint: ['Blocked messages are not read by TTS, not shown on the chat overlay and cannot trigger commands or giveaway entries. Deleting messages on the platform itself requires moderator API access and is not performed.', 'הודעות חסומות לא מוקראות ב-TTS, לא מוצגות ב-Overlay הצ׳אט ולא מפעילות פקודות או השתתפות בהגרלה. מחיקת הודעות בפלטפורמה עצמה דורשת הרשאות API של מנהל ואינה מתבצעת.'],
+  moderation_enabled: ['Moderation enabled', 'סינון פעיל'], block_links: ['Block links', 'חסימת קישורים'], spam_filter: ['Spam filter (repeats, flood, caps)', 'סינון ספאם (חזרות, הצפה, אותיות גדולות)'], exempt_mods: ['Moderators are exempt', 'מנהלים פטורים'], warn_in_chat: ['Warn the user in chat', 'אזהרה למשתמש בצ׳אט'],
+  max_repeats: ['Same message limit (30s)', 'מגבלת הודעה זהה (30 שניות)'], max_per_10s: ['Messages per 10s', 'הודעות ל-10 שניות'], warn_template: ['Warning message', 'הודעת אזהרה'],
+  err_TTS_DISABLED: ['LiveX TTS is turned off — enable it first', 'LiveX TTS כבוי — יש להפעיל אותו קודם'],
+  pos_top: ['Top', 'למעלה'], pos_middle: ['Middle', 'אמצע'], pos_bottom: ['Bottom', 'למטה'], style_position: ['Vertical position', 'מיקום אנכי'], overlay_off: ['Disabled', 'כבוי'],
   // generic
   confirm: ['Please confirm', 'אישור'], cancel: ['Cancel', 'ביטול'], ok: ['OK', 'אישור'],
   // errors (codes from server / main process)

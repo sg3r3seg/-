@@ -1,5 +1,5 @@
 // Audio players living for the whole app session: TTS speech and sound board.
-import { call, b64ToUrl } from './ui.js';
+import { call, b64ToUrl, toast, errText } from './ui.js';
 
 async function playUrl(url, { volume = 1, sinkId } = {}, register) {
   const a = new Audio(url);
@@ -51,13 +51,15 @@ export function startPlayers(app) {
   let currentAudio = null; let currentId = null;
   window.livex.on('tts:speak', async (item) => {
     currentId = item.id;
+    let failed = null;
     try {
       await speak(item.text, item.profile || {}, item.outputDeviceId, (a) => { currentAudio = a; });
     } catch (e) {
-      console.warn('TTS failed', e);
+      failed = e; // voice provider unavailable / offline: report it and move on to the next message
+      toast(`TTS: ${errText(e)}`, 'err', 5000);
     } finally {
       currentAudio = null;
-      if (currentId === item.id) call('tts:done', item.id).catch(() => {});
+      if (currentId === item.id) call(failed ? 'tts:failed' : 'tts:done', item.id, failed ? errText(failed) : undefined).catch(() => {});
     }
   });
   window.livex.on('tts:stop', () => {

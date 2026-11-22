@@ -2,6 +2,9 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   server:
     runs-on: ubuntu-latest
@@ -41,3 +44,32 @@ jobs:
         with:
           name: LiveX-Setup
           path: app/release/LiveX-Setup-*.exe
+  release:
+    # Publishes the Windows installer built above as a GitHub pre-release.
+    # Runs on manual dispatch or when the commit message contains [release].
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]')
+    runs-on: ubuntu-latest
+    needs: [windows-installer]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LiveX-Setup
+          path: dist
+      - name: Create or update the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./app/package.json').version")
+          TAG="v${VERSION}-preview"
+          FILE="dist/LiveX-Setup-${VERSION}.exe"
+          sha256sum "$FILE" | tee dist/SHA256SUMS.txt
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" dist/SHA256SUMS.txt --clobber
+            gh release edit "$TAG" --notes-file .github/release-notes.md --target "$GITHUB_SHA"
+          else
+            gh release create "$TAG" "$FILE" dist/SHA256SUMS.txt --prerelease --target "$GITHUB_SHA" \
+              --title "LiveX ${VERSION} — Preview (test build)" --notes-file .github/release-notes.md
+          fi

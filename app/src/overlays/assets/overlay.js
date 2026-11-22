@@ -11,8 +11,9 @@ window.LiveXOverlay = function connect(route, handlers) {
     if (st.background) r.setProperty('--bg', st.background);
     if (st.fontSize) r.setProperty('--size', `${Number(st.fontSize)}px`);
     if (st.font) r.setProperty('--font', st.font);
-    if (st.align) document.body.dataset.align = st.align;
-    if (st.position) document.body.dataset.position = st.position;
+    if (st.align) document.body.dataset.align = st.align; else delete document.body.dataset.align;
+    if (st.position) document.body.dataset.position = st.position; else delete document.body.dataset.position;
+    if (st.text) document.body.style.color = st.text;
     handlers.style && handlers.style(st);
   };
   function open() {

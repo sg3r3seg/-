@@ -9,7 +9,29 @@ module.exports = (ctx) => {
   const cmds = () => ctx.store.get('commands', [
     { id: uid(), trigger: '!livex', response: 'Powered by LiveX — ONE PLATFORM. EVERY CREATOR.', cooldownSec: 30, level: 'everyone', enabled: true, macroId: '' },
   ]);
-  const bot = () => ({ enabled: false, welcome: { enabled: false, template: 'Welcome {user}! 👋' }, keywords: [], timed: [], ...ctx.store.get('chatbot', {}) });
+  const MOD_DEFAULT = { enabled: true, blockLinks: true, spamFilter: true, maxRepeats: 3, maxPerTenSec: 6, maxCapsRatio: 0.8, exemptMods: true, warn: false, warnTemplate: '@{user} please don’t post links or spam.' };
+  const bot = () => { const b = { enabled: false, welcome: { enabled: false, template: 'Welcome {user}! 👋' }, keywords: [], timed: [], ...ctx.store.get('chatbot', {}) }; b.moderation = { ...MOD_DEFAULT, ...(b.moderation || {}) }; return b; };
+  const history = new Map(); // userKey -> [{ts, text}]
+  const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|gg|ly|me|co|tv|xyz|ru|info|link|shop|il)\b)/i;
+  // Returns a reason string when a chat message must be blocked, else null.
+  function moderate(e) {
+    const m = bot().moderation;
+    if (!m.enabled || e.type !== 'chat') return null;
+    if (m.exemptMods && e.user?.isMod) return null;
+    const text = String(e.text || '');
+    if (m.blockLinks && LINK.test(text)) return 'link';
+    if (!m.spamFilter) return null;
+    const k = userKey(e); const now = Date.now();
+    const h = (history.get(k) || []).filter((x) => now - x.ts < 30_000);
+    h.push({ ts: now, text: text.toLowerCase().trim() }); history.set(k, h);
+    if (history.size > 20000) history.clear();
+    if (h.filter((x) => x.text === h[h.length - 1].text).length >= m.maxRepeats) return 'repeat';
+    if (h.filter((x) => now - x.ts < 10_000).length > m.maxPerTenSec) return 'flood';
+    const letters = text.replace(/[^A-Za-z]/g, '');
+    if (letters.length >= 12 && letters.replace(/[^A-Z]/g, '').length / letters.length > m.maxCapsRatio) return 'caps';
+    if (/(.)\1{14,}/u.test(text)) return 'repeated_chars';
+    return null;
+  }
 
   async function reply(text, evt, source) {
     const results = await ctx.platforms.sendChat(text, evt?.platform);
@@ -46,12 +68,21 @@ module.exports = (ctx) => {
         keywords: (b.keywords || []).slice(0, 100).map((k) => ({ id: clampStr(k.id || uid(), 20), keyword: clampStr(k.keyword, 60).toLowerCase(), response: clampStr(k.response, 300), enabled: !!k.enabled })).filter((k) => k.keyword),
         timed: (b.timed || []).slice(0, 20).map((t) => ({ id: clampStr(t.id || uid(), 20), text: clampStr(t.text, 300), intervalMin: num(t.intervalMin, 15, 1, 720), enabled: !!t.enabled })),
       };
+      const md = b.moderation || {};
+      out.moderation = { enabled: !!md.enabled, blockLinks: !!md.blockLinks, spamFilter: !!md.spamFilter, exemptMods: md.exemptMods !== false, warn: !!md.warn,
+        maxRepeats: num(md.maxRepeats, 3, 2, 20), maxPerTenSec: num(md.maxPerTenSec, 6, 2, 50), maxCapsRatio: num(md.maxCapsRatio, 0.8, 0.5, 1), warnTemplate: clampStr(md.warnTemplate || MOD_DEFAULT.warnTemplate, 200) };
       ctx.store.set('chatbot', out); scheduleTimed(); return out;
     },
     start: scheduleTimed,
     stop() { timers.forEach(clearInterval); timers = []; },
+    moderate,
+    onBlocked(e) {
+      ctx.activity({ kind: 'bot', text: `Blocked message from ${e.user?.name || '?'} (${e.blocked})` });
+      const m = bot().moderation;
+      if (m.warn && ctx.session.has('pro')) reply(fill(m.warnTemplate, e), e, 'moderation');
+    },
     onEvent(e) {
-      if (e.type !== 'chat' || !ctx.session.has('pro') || e.test) return;
+      if (e.type !== 'chat' || !ctx.session.has('pro') || e.test || e.blocked) return;
       ctx.overlay.broadcast('chat', 'message', { id: e.id, user: e.user, text: e.text, platform: e.platform });
       const text = String(e.text || '').trim();
       if (text.startsWith('!')) {

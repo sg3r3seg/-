@@ -8,13 +8,15 @@ body { display: flex; justify-content: center; align-items: flex-start; height: 
 .tag { font-size: 13px; letter-spacing: 3px; color: var(--accent); display: block; text-transform: uppercase; }
 .test { position: absolute; top: -12px; inset-inline-end: 12px; background: #ffc857; color: #000; font-size: 12px; padding: 2px 8px; border-radius: 6px; }
 .alert { position: relative; }
+.alert.has-media { flex-direction: column; text-align: center; }
+.alert img.media { width: auto; height: auto; max-width: 420px; max-height: 300px; border-radius: 12px; border: 0; }
 </style></head><body><div id="stage"></div>
 <script>
 const q = []; let busy = false; const stage = document.getElementById('stage');
 function next() {
   if (busy || !q.length) return; busy = true; const a = q.shift();
-  const el = document.createElement('div'); el.className = 'alert card';
-  el.innerHTML = (a.test ? '<span class="test">TEST</span>' : '') + (a.avatar || a.image ? `<img src="${lxEsc(a.image || a.avatar)}" alt="">` : '') + `<div><span class="tag">${lxEsc(a.type)}${a.platform && a.platform !== 'test' ? ' · ' + lxEsc(a.platform) : ''}</span><span class="grad">${lxEsc(a.text)}</span></div>`;
+  const el = document.createElement('div'); el.className = 'alert card' + (a.custom ? ' has-media' : '');
+  el.innerHTML = (a.test ? '<span class="test">TEST</span>' : '') + (a.custom ? `<img class="media" src="${lxEsc(a.image)}" alt="">` : (a.avatar || a.image ? `<img src="${lxEsc(a.image || a.avatar)}" alt="">` : '')) + `<div><span class="tag">${lxEsc(a.type)}${a.platform && a.platform !== 'test' ? ' · ' + lxEsc(a.platform) : ''}</span><span class="grad">${lxEsc(a.text)}</span></div>`;
   stage.appendChild(el);
   setTimeout(() => { el.classList.add('leave'); setTimeout(() => { el.remove(); busy = false; next(); }, 500); }, a.durationMs || 5000);
 }

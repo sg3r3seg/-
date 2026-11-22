@@ -1,5 +1,5 @@
 import { t } from '../i18n.js';
-import { h, call, card, field, input, select, act, btn, badge, copy, fmtTime, confirmBox, empty } from '../ui.js';
+import { h, call, card, field, input, select, act, btn, badge, copy, fmtTime, confirmBox, empty, toggle } from '../ui.js';
 import { icon } from '../icons.js';
 
 const FONTS = ['Segoe UI', 'Heebo', 'Arial', 'Impact', 'Consolas', 'Georgia', 'Trebuchet MS'];
@@ -18,6 +18,7 @@ export async function overlayEditor(root) {
       accent: input({ type: 'color', value: st.accent, class: 'color' }), text: input({ type: 'color', value: st.text, class: 'color' }),
       background: input({ value: st.background }), fontSize: input({ type: 'number', min: 10, max: 120, value: st.fontSize }),
       font: select(FONTS.map((f) => ({ value: f, label: f })), st.font), align: select(['start', 'center', 'end'].map((a) => ({ value: a, label: t(`align_${a}`) })), st.align),
+      position: select(['top', 'middle', 'bottom'].map((a) => ({ value: a, label: t(`pos_${a}`) })), st.position || ({ alerts: 'top', chat: 'bottom', tts: 'bottom', timer: 'top', giveaway: 'top', 'follower-goal': 'top' }[route] || 'middle')),
     };
     if (route === 'chat') els.maxMessages = input({ type: 'number', min: 1, max: 50, value: st.maxMessages });
     const values = () => Object.fromEntries(Object.entries(els).map(([k, el]) => [k, el.type === 'number' ? +el.value : el.value]));
@@ -48,12 +49,14 @@ export async function overlayCenter(root, app) {
     if (!info.running) { list.replaceChildren(h('div', { class: 'msg show err' }, t('overlay_not_running'))); return; }
     list.replaceChildren(...info.routes.map((r) => {
       const res = results[r.route];
-      const verified = res?.ok;
+      const verified = res?.ok && !info.disabled.includes(r.route);
       return h('div', { class: `overlay-row ${r.allowed ? '' : 'locked'}` },
         h('div', { class: 'ov-name' }, h('b', {}, `/${r.route}`), h('div', { class: 'muted small' }, t(`ov_${r.route.replace('-', '_')}`))),
         h('div', { class: 'ov-url mono' }, r.allowed ? (verified ? r.url : t('verify_first')) : t('requires_license')),
         h('div', { class: 'row' },
-          !r.allowed ? badge(t('locked'), '') : res ? badge(verified ? `${t('verified')} ${fmtTime(res.checkedAt)}` : t('check_failed'), verified ? 'ok' : 'err') : badge(t('not_checked')),
+          r.allowed ? toggle(!info.disabled.includes(r.route), async (v) => { info.disabled = await call('overlay:setEnabled', r.route, v); await verify(); }, '') : null,
+          info.disabled.includes(r.route) ? badge(t('overlay_off'), 'warn') : !r.allowed ? badge(t('locked'), '') : res ? badge(verified ? `${t('verified')} ${fmtTime(res.checkedAt)}` : t('check_failed'), verified ? 'ok' : 'err') : badge(t('not_checked')),
+          btn([h('span', { html: icon('eye', 14) }), t('preview')], () => call('overlay:openPreview', r.route), 'sm', { disabled: !(r.allowed && verified) }),
           badge(`${info.clients[r.route] || 0} ${t('clients')}`),
           btn([h('span', { html: icon('copy', 14) }), t('copy')], () => copy(r.url), 'sm', { disabled: !(r.allowed && verified) })));
     }));

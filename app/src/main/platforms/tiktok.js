@@ -38,7 +38,8 @@ class TikTok extends Connector {
         this.publish({ type: 'gift', user, gift: d.giftName || `Gift ${d.giftId}`, count: d.repeatCount || 1, amount: (d.diamondCount || 0) * (d.repeatCount || 1), currency: 'diamonds', image: d.giftPictureUrl });
         break;
       case 'follow': this.publish({ type: 'follow', user }); break;
-      case 'social': if (/follow/i.test(d.displayType || '')) this.publish({ type: 'follow', user }); else if (/share/i.test(d.displayType || '')) this.publish({ type: 'share', user }); break;
+      // Providers emit 'social' in addition to 'follow'/'share' for the same action — ignore it to avoid doubles.
+      case 'social': break;
       case 'share': this.publish({ type: 'share', user }); break;
       case 'like': this.publish({ type: 'like', user, count: d.likeCount || 1, total: d.totalLikeCount }); break;
       case 'subscribe': this.publish({ type: 'sub', user }); break;

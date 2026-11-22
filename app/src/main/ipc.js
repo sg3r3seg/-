@@ -52,7 +52,12 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   handle('session:forgot', 'public', (email) => session.forgot(s(email, 254)));
   handle('session:resend', 'public', (email, password) => session.resendVerification(s(email, 254), s(password, 200)));
   handle('session:logout', 'public', (all) => { platforms.disconnectAll(); return session.logout({ all: !!all }); });
-  handle('session:refresh', 'auth', () => session.refreshStatus());
+  handle('session:refresh', 'auth', async () => {
+    try { return await session.refreshStatus(); } catch (e) {
+      if (e.code === 'NETWORK') { session.enterOffline(); return session.publicState(); } // fall back to the signed offline lease
+      throw e;
+    }
+  });
   handle('session:activate', 'auth', (code) => session.activate(s(code, 64)));
   handle('session:bind', 'auth', (licenseId) => session.bind(s(licenseId, 40)));
   handle('session:devices', 'auth', () => session.devices());
@@ -103,7 +108,18 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   handle('activity:recent', 'auth', () => hub.activity.slice(0, 100));
 
   // ---- overlays ---------------------------------------------------------------------
-  handle('overlay:info', 'any', () => ({ running: ctx.overlay.running(), port: ctx.overlay.port, routes: ROUTES.map((r) => ({ route: r, url: ctx.overlay.running() ? ctx.overlay.url(r) : null, allowed: r === 'tts' ? session.has('tts') : session.has('pro') })), clients: ctx.overlay.clientCounts(), styles: ctx.store.get('overlayStyles', {}) }));
+  handle('overlay:setEnabled', 'any', (route, enabled) => {
+    if (!ROUTES.includes(route)) throw coded('VALIDATION', 'Unknown overlay');
+    const set = new Set(ctx.store.get('overlayDisabled', []));
+    if (enabled) set.delete(route); else set.add(route);
+    ctx.store.set('overlayDisabled', [...set]); ctx.overlay.setDisabled([...set]);
+    return [...set];
+  });
+  handle('overlay:openPreview', 'any', (route) => {
+    if (!ROUTES.includes(route) || !ctx.overlay.running()) throw coded('VALIDATION', 'Overlay not available');
+    return shell.openExternal(ctx.overlay.url(route)); // local overlay URL only
+  });
+  handle('overlay:info', 'any', () => ({ disabled: ctx.store.get('overlayDisabled', []), running: ctx.overlay.running(), port: ctx.overlay.port, routes: ROUTES.map((r) => ({ route: r, url: ctx.overlay.running() ? ctx.overlay.url(r) : null, allowed: r === 'tts' ? session.has('tts') : session.has('pro') })), clients: ctx.overlay.clientCounts(), styles: ctx.store.get('overlayStyles', {}) }));
   handle('overlay:verify', 'any', () => ctx.overlay.verify());
   handle('overlay:setStyle', 'pro', (route, style) => {
     if (!ROUTES.includes(route)) throw coded('VALIDATION', 'Unknown overlay');
@@ -119,6 +135,17 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   handle('alerts:get', 'pro', () => ctx.alerts.get());
   handle('alerts:save', 'pro', (d) => ctx.alerts.save(obj(d)));
   handle('alerts:test', 'pro', (type) => ctx.alerts.test(s(type, 20)));
+  handle('alerts:importMedia', 'pro', async () => {
+    const r = await dialog.showOpenDialog(getWindow(), { properties: ['openFile'], filters: [{ name: 'Image / GIF', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }] });
+    if (r.canceled || !r.filePaths[0]) return null;
+    const src = r.filePaths[0]; const ext = path.extname(src).toLowerCase();
+    if (!['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) throw coded('VALIDATION', 'Unsupported image type');
+    if (fs.statSync(src).size > 10 * 1024 * 1024) throw coded('VALIDATION', 'Image must be 10MB or smaller');
+    const dir = path.join(app.getPath('userData'), 'media'); fs.mkdirSync(dir, { recursive: true });
+    const name = `${require('node:crypto').randomBytes(4).toString('hex')}${ext}`;
+    fs.copyFileSync(src, path.join(dir, name));
+    return { name, url: ctx.overlay.running() ? `http://127.0.0.1:${ctx.overlay.port}${ctx.overlay.mediaUrl(name)}` : null };
+  });
 
   // ---- TTS + Voice Studio ---------------------------------------------------------------
   handle('tts:get', 'tts', () => ({ settings: ctx.tts.settings(), state: ctx.tts.state(), profiles: ctx.tts.profiles(), systemSupported: ttsSystem.supported() }));
@@ -130,6 +157,7 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   handle('tts:clear', 'tts', () => ctx.tts.clear());
   handle('tts:remove', 'tts', (id) => ctx.tts.remove(s(id, 20)));
   handle('tts:done', 'tts', (id) => ctx.tts.done(s(id, 20)));
+  handle('tts:failed', 'tts', (id, msg) => ctx.tts.failed(s(id, 20), s(msg, 300)));
   handle('tts:systemVoices', 'tts', () => ttsSystem.voices());
   handle('tts:synthSystem', 'tts', async (o) => { o = obj(o); const buf = await ttsSystem.synthesize({ text: s(o.text, 1000), voice: s(o.voice, 200), rate: +o.rate || 1, pitch: +o.pitch || 1, volume: o.volume === undefined ? 1 : +o.volume }); return buf.toString('base64'); });
   handle('tts:saveProfile', 'tts', (p) => ctx.tts.saveProfile(obj(p)));

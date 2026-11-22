@@ -18,7 +18,8 @@ if (api.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(api.hostna
 if (api.protocol !== 'https:') console.warn(`! Building with a LOCAL server address (${cfg.apiBase}). For distribution set LIVEX_API_BASE=https://… and run "npm run keys" in /server.`);
 
 const bin = (name) => path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? `${name}.cmd` : name);
-const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { stdio: 'inherit', cwd: root, shell: process.platform === 'win32', ...opts });
+// A shell is needed only for .cmd shims on Windows; never for makensis (its path contains spaces).
+const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { stdio: 'inherit', cwd: root, shell: process.platform === 'win32' && cmd.endsWith('.cmd'), ...opts });
 
 run(bin('electron-builder'), ['--win', 'dir', '--x64', '--publish', 'never']);
 

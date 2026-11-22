@@ -2,7 +2,7 @@
   "name": "livex",
   "productName": "LiveX",
   "version": "1.0.0",
-  "description": "LiveX \u2014 ONE PLATFORM. EVERY CREATOR. Live-stream management for creators.",
+  "description": "LiveX — ONE PLATFORM. EVERY CREATOR. Live-stream management for creators.",
   "author": "LiveX",
   "license": "UNLICENSED",
   "private": true,
@@ -14,7 +14,7 @@
     "dist:win": "node scripts/build-installer.js"
   },
   "dependencies": {
-    "ws": "8.18.3"
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "electron": "44.11.5",

@@ -23,7 +23,7 @@ class OverlayServer {
       const u = new URL(req.url, 'http://x');
       const origin = req.headers.origin;
       const okOrigin = !origin || origin === `http://127.0.0.1:${this.port}` || origin === `http://localhost:${this.port}` || origin === 'null';
-      if (u.pathname !== '/ws' || !this.validKey(u.searchParams.get('key')) || !okOrigin) { socket.destroy(); return; }
+      if (u.pathname !== '/ws' || !this.validKey(u.searchParams.get('key')) || !okOrigin || this.disabled?.has(u.searchParams.get('route'))) { socket.destroy(); return; }
       this.wss.handleUpgrade(req, socket, head, (ws) => this.onClient(ws, u.searchParams.get('route')));
     });
     await new Promise((resolve, reject) => {
@@ -37,6 +37,11 @@ class OverlayServer {
     return typeof k === 'string' && k.length === this.key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(this.key));
   }
   url(route) { return `http://127.0.0.1:${this.port}/${route}?key=${this.key}`; }
+  mediaUrl(name) { return `/media/${encodeURIComponent(name)}?key=${this.key}`; }
+  setDisabled(list) {
+    this.disabled = new Set(list);
+    for (const c of this.clients) if (this.disabled.has(c.route)) c.close(4001, 'disabled');
+  }
   running() { return !!this.server?.listening; }
 
   handle(req, res) {
@@ -50,7 +55,15 @@ class OverlayServer {
       const type = f.endsWith('.js') ? 'text/javascript' : f.endsWith('.css') ? 'text/css' : 'application/octet-stream';
       res.writeHead(200, { ...sec, 'Content-Type': `${type}; charset=utf-8` }); fs.createReadStream(f).pipe(res); return;
     }
+    if (route.startsWith('media/')) {
+      const name = path.basename(route);
+      const f = this.mediaDir && path.join(this.mediaDir, name);
+      const types = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
+      if (!this.validKey(u.searchParams.get('key')) || !f || !types[path.extname(name)] || !fs.existsSync(f)) { res.writeHead(404, sec); res.end(); return; }
+      res.writeHead(200, { ...sec, 'Content-Type': types[path.extname(name)] }); fs.createReadStream(f).pipe(res); return;
+    }
     if (!ROUTES.includes(route)) { res.writeHead(404, sec); res.end('Not found'); return; }
+    if (this.disabled?.has(route)) { res.writeHead(410, sec); res.end('This overlay is disabled in LiveX'); return; }
     if (!this.validKey(u.searchParams.get('key'))) { res.writeHead(403, sec); res.end('Invalid overlay key'); return; }
     res.writeHead(200, { ...sec, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://127.0.0.1:* ws://localhost:*" });
     fs.createReadStream(path.join(DIR, `${route}.html`)).pipe(res);
@@ -66,6 +79,7 @@ class OverlayServer {
   // Send a message to overlays of a route; `sticky` state is replayed to new clients.
   broadcast(route, type, payload, { sticky = false } = {}) {
     if (sticky) this.state[route] = { type, payload };
+    if (this.disabled?.has(route)) return;
     const msg = JSON.stringify({ type, payload });
     for (const c of this.clients) if (c.route === route && c.readyState === 1) c.send(msg);
   }
@@ -86,7 +100,7 @@ class OverlayServer {
       try {
         const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
         const body = await res.text();
-        out.push({ route: r, url, ok: res.ok && body.includes(`data-overlay="${r}"`), status: res.status, checkedAt: Date.now() });
+        out.push({ route: r, url, ok: res.ok && body.includes(`data-overlay="${r}"`), disabled: !!this.disabled?.has(r), status: res.status, checkedAt: Date.now() });
       } catch (e) { out.push({ route: r, url, ok: false, error: e.message, checkedAt: Date.now() }); }
     }
     return out;

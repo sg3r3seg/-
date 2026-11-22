@@ -21,7 +21,11 @@ export async function alerts(root) {
           field(t('message_template'), input({ value: r.template, onchange: upd('template') }), t('template_vars')),
           field(t('min_amount'), input({ type: 'number', min: 0, value: r.minAmount, onchange: upd('minAmount') })),
           field(t('duration_ms'), input({ type: 'number', min: 1000, step: 500, value: r.durationMs, onchange: upd('durationMs') })),
-          field(t('sound'), select(soundOpts, r.soundId, { onchange: upd('soundId') }))));
+          field(t('sound'), select(soundOpts, r.soundId, { onchange: upd('soundId') }))),
+        h('div', { class: 'row' }, h('span', { class: 'field-label' }, t('alert_media')),
+          r.media ? h('span', { class: 'badge ok' }, r.media) : h('span', { class: 'muted small' }, t('alert_media_none')),
+          h('button', { class: 'btn sm', onclick: (e) => act(e.currentTarget, async () => { const m = await call('alerts:importMedia'); if (m) { data.rules[i].media = m.name; render(); } }) }, h('span', { html: icon('upload', 14) }), t('choose_image')),
+          r.media ? h('button', { class: 'btn sm ghost', onclick: () => { data.rules[i].media = ''; render(); } }, t('remove')) : null));
     }));
   };
   render();
@@ -54,6 +58,18 @@ export async function chatbot(root) {
       h('h4', {}, t('keyword_replies')), kwList, btn([h('span', { html: icon('plus') }), t('add')], () => { b.keywords.push({ keyword: '', response: '', enabled: true }); renderKw(); }, 'sm'),
       h('h4', {}, t('timed_messages')), timedList, btn([h('span', { html: icon('plus') }), t('add')], () => { b.timed.push({ text: '', intervalMin: 15, enabled: true }); renderTimed(); }, 'sm'),
       h('div', { class: 'row end' }, btn([h('span', { html: icon('check') }), t('save')], (e) => act(e.currentTarget, async () => { b = await call('bot:save', b); renderKw(); renderTimed(); }, t('saved')), 'primary'))),
+    card(t('moderation'), h('p', { class: 'muted small' }, t('moderation_hint')),
+      h('div', { class: 'toggles' },
+        toggle(b.moderation.enabled, (v) => { b.moderation.enabled = v; }, t('moderation_enabled')),
+        toggle(b.moderation.blockLinks, (v) => { b.moderation.blockLinks = v; }, t('block_links')),
+        toggle(b.moderation.spamFilter, (v) => { b.moderation.spamFilter = v; }, t('spam_filter')),
+        toggle(b.moderation.exemptMods, (v) => { b.moderation.exemptMods = v; }, t('exempt_mods')),
+        toggle(b.moderation.warn, (v) => { b.moderation.warn = v; }, t('warn_in_chat'))),
+      h('div', { class: 'grid g3' },
+        field(t('max_repeats'), input({ type: 'number', min: 2, max: 20, value: b.moderation.maxRepeats, onchange: (e) => { b.moderation.maxRepeats = +e.target.value; } })),
+        field(t('max_per_10s'), input({ type: 'number', min: 2, max: 50, value: b.moderation.maxPerTenSec, onchange: (e) => { b.moderation.maxPerTenSec = +e.target.value; } })),
+        field(t('warn_template'), input({ value: b.moderation.warnTemplate, onchange: (e) => { b.moderation.warnTemplate = e.target.value; } }))),
+      h('div', { class: 'row end' }, btn([h('span', { html: icon('check') }), t('save')], (e) => act(e.currentTarget, async () => { b = await call('bot:save', b); }, t('saved')), 'primary'))),
     card(t('send_message'), h('div', { class: 'row' }, manual, btn(t('send'), (e) => act(e.currentTarget, async () => {
       const r = await call('bot:send', manual.value);
       const sent = r.filter((x) => x.ok).map((x) => x.platform);

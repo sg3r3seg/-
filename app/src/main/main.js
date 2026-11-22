@@ -85,6 +85,7 @@ app.whenReady().then(async () => {
   settings.flush();
   const store = new Store(dataDir, 'modules', {});
   const overlay = new OverlayServer();
+  overlay.mediaDir = path.join(dataDir, 'media');
   const remote = new RemoteServer();
 
   hub.on('log', (l) => { logs.push(l); if (logs.length > 1000) logs.shift(); send('log', l); });
@@ -99,6 +100,7 @@ app.whenReady().then(async () => {
     try {
       await overlay.start({ port: settings.get('overlayPort', 4777), key: settings.get('overlayKey') });
       for (const [route, style] of Object.entries(store.get('overlayStyles', {}))) overlay.setStyle(route, style);
+      overlay.setDisabled(store.get('overlayDisabled', []));
       hub.log('info', 'overlay', `overlay server on 127.0.0.1:${overlay.port}`);
       ctx.start();
     } catch (e) { hub.log('error', 'overlay', `cannot start overlay server: ${e.message}`); }
