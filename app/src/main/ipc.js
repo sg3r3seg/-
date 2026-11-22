@@ -44,7 +44,7 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   const s = (v, max = 500) => String(v ?? '').slice(0, max);
 
   // ---- app / session --------------------------------------------------------
-  handle('app:info', 'public', () => ({ version: app.getVersion(), platform: process.platform, apiBase: config.apiBase, websiteUrl: config.websiteUrl, secureStorage: secure.available() }));
+  handle('app:info', 'public', () => ({ version: app.getVersion(), platform: process.platform, apiBase: config.apiBase, websiteUrl: config.websiteUrl, officialSiteUrl: config.officialSiteUrl, secureStorage: secure.available() }));
   handle('session:state', 'public', () => session.publicState());
   handle('session:boot', 'public', () => session.boot((step, status, detail) => ctx.send('boot:progress', { step, status, detail })));
   handle('session:login', 'public', (email, password) => session.login(s(email, 254).trim(), s(password, 200)));
@@ -70,6 +70,10 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
     const url = new URL(s(u, 500));
     if (url.protocol !== 'https:') throw coded('FORBIDDEN', 'Only https links can be opened');
     return shell.openExternal(url.toString());
+  });
+  handle('app:openOfficialSite', 'public', () => {
+    if (!config.officialSiteUrl) throw coded('NOT_CONFIGURED', 'Official site not configured');
+    return shell.openExternal(config.officialSiteUrl);
   });
   handle('app:copy', 'public', (text) => { require('electron').clipboard.writeText(s(text, 2000)); return true; });
 

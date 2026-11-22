@@ -138,6 +138,10 @@ function renderAuth(tab = 'login') {
       h('div', { class: 'auth-top' }, h('h2', {}, t(`auth_${tab}`)), langButton()),
       notice?.code && notice.code !== 'OFFLINE' ? h('div', { class: 'msg show warn' }, errText(notice)) : null,
       tabs, form,
+      app.info?.officialSiteUrl ? h('button', { class: 'official-site', type: 'button', title: app.info.officialSiteUrl, onclick: () => call('app:openOfficialSite').catch(toastErr) },
+        h('span', { class: 'os-icon', html: icon('globe', 18) }),
+        h('span', { class: 'os-text' }, h('span', { class: 'os-label' }, t('official_site')), h('span', { class: 'os-url mono' }, app.info.officialSiteUrl.replace(/^https:\/\//, '').replace(/\/$/, ''))),
+        h('span', { class: 'os-go', html: icon('external', 15) })) : null,
       h('p', { class: 'muted small' }, t('server_label'), ' ', h('span', { class: 'mono' }, app.info?.apiBase || '')),
       h('button', { class: 'link', onclick: () => app.openSite('/') }, t('open_website')))));
 }

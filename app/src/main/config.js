@@ -23,6 +23,8 @@ const override = !isPackaged ? process.env.LIVEX_API_BASE : undefined;
 module.exports = {
   apiBase: validateBase(override || raw.apiBase),
   websiteUrl: validateBase(override || raw.websiteUrl || raw.apiBase),
+  // Public marketing site shown on the sign-in screen (opened in the user's browser, HTTPS only).
+  officialSiteUrl: (() => { try { const u = new URL(raw.officialSiteUrl || ''); return u.protocol === 'https:' ? u.toString() : null; } catch { return null; } })(),
   tokenPublicKey: raw.tokenPublicKey,
   releasePublicKey: raw.releasePublicKey,
   validateBase,

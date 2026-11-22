@@ -17,7 +17,7 @@ const D = {
   registered: ['Account created. Check your email to verify it. Your User ID:', 'החשבון נוצר. יש לאמת את כתובת הדוא"ל. מזהה המשתמש שלך:'],
   dev_outbox: ['development server: the email was saved to the server outbox (SMTP not configured)', 'שרת פיתוח: ההודעה נשמרה בתיבת היוצא של השרת (SMTP לא הוגדר)'],
   resend_verification: ['Resend verification email', 'שליחה חוזרת של אימות'], verification_resent: ['Verification email sent', 'הודעת אימות נשלחה'],
-  server_label: ['Server:', 'שרת:'], open_website: ['Open the LiveX website', 'פתיחת אתר LiveX'],
+  server_label: ['Server:', 'שרת:'], open_website: ['Account & purchases (server site)', 'אזור אישי ורכישות (אתר השרת)'],
   // nav
   group_main: ['Main', 'ראשי'], group_voice: ['Voice', 'קול'], group_live: ['Live tools', 'כלי שידור'], group_engage: ['Engagement', 'מעורבות'], group_overlays: ['Overlays', 'Overlays'], group_grow: ['Growth', 'צמיחה'], group_system: ['System', 'מערכת'],
   nav_dashboard: ['Dashboard', 'לוח בקרה'], nav_account: ['Account & License', 'חשבון ורישיון'], nav_connections: ['Connections', 'חיבורים'], nav_tts: ['LiveX TTS', 'LiveX TTS'], nav_voice_studio: ['Voice Studio', 'Voice Studio'],
@@ -165,6 +165,7 @@ const D = {
   err_TTS_DISABLED: ['LiveX TTS is turned off — enable it first', 'LiveX TTS כבוי — יש להפעיל אותו קודם'],
   pos_top: ['Top', 'למעלה'], pos_middle: ['Middle', 'אמצע'], pos_bottom: ['Bottom', 'למטה'], style_position: ['Vertical position', 'מיקום אנכי'], overlay_off: ['Disabled', 'כבוי'],
   not_sent_short: ['not sent — no chat-write connection', 'לא נשלח — אין חיבור עם הרשאת כתיבה'],
+  official_site: ['Official LiveX website', 'האתר הרשמי של LiveX'],
   // generic
   confirm: ['Please confirm', 'אישור'], cancel: ['Cancel', 'ביטול'], ok: ['OK', 'אישור'],
   // errors (codes from server / main process)
