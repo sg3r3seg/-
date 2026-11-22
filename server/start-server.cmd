@@ -27,6 +27,7 @@ if not exist "node_modules" (
   if errorlevel 1 ( echo  Installation failed. & pause & exit /b 1 )
 )
 echo  Server: http://127.0.0.1:8787   (keep this window open while using LiveX)
-start "" http://127.0.0.1:8787
+set "LIVEX_OPEN_BROWSER=1"
+set "LIVEX_LOG_FILE=%~dp0data\server-log.txt"
 node --disable-warning=ExperimentalWarning src\index.js
 pause
