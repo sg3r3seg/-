@@ -2,6 +2,16 @@
 // built with textContent to keep the renderer XSS-safe.
 import { t, lang } from './i18n.js';
 
+// Conditional children (cond ? node : null) are common in the views: make
+// append/prepend/replaceChildren skip null/false/undefined instead of
+// rendering the text "null".
+for (const m of ['append', 'prepend', 'replaceChildren']) {
+  const orig = Element.prototype[m];
+  Element.prototype[m] = function patched(...nodes) {
+    return orig.apply(this, nodes.flat(Infinity).filter((n) => n !== null && n !== undefined && n !== false));
+  };
+}
+
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {

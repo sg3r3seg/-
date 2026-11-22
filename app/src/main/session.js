@@ -137,7 +137,7 @@ class Session extends EventEmitter {
     if (anyRevoked && (lost.length || !r.entitlements.length)) notice = { code: 'LICENSE_REVOKED', text: 'license_revoked' };
     else if (lost.length) notice = { code: 'LICENSE_LOST', text: 'license_lost' };
     this.set({
-      phase: 'ready', offline: false, user: s.user, licenses: s.licenses, entitlements: r.entitlements,
+      phase: 'ready', offline: false, user: s.user || this.state.user, licenses: s.licenses, entitlements: r.entitlements,
       lease: { valid: true, expiresAt: r.expiresAt }, notice,
     });
   }

@@ -73,6 +73,10 @@ function createTray() {
 }
 
 app.whenReady().then(async () => {
+  // Automated tests on Linux CI have no OS keychain. Never available in packaged builds.
+  if (!app.isPackaged && process.env.LIVEX_TEST_PLAINTEXT_STORAGE === '1' && process.platform === 'linux') {
+    require('electron').safeStorage.setUsePlainTextEncryption?.(true);
+  }
   const dataDir = app.getPath('userData');
   const settings = new Store(dataDir, 'settings', {
     language: (app.getLocale() || 'en').startsWith('he') ? 'he' : 'en', theme: 'navy', notifications: true, outputDeviceId: 'default',

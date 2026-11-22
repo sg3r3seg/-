@@ -22,7 +22,7 @@ r.post('/activate',
   limiter('activate-user', 20, 3600_000, (req) => req.user.id),
   h(async (req, res) => {
     const license = L.activate(req.user.id, req.body?.code, deviceFromReq(req), req.ip);
-    res.json({ license, ...L.appStatus(req.user, req.token.dev) });
+    res.json({ license, user: auth.publicUser(req.user), ...L.appStatus(req.user, req.token.dev) });
   }));
 
 r.post('/bind', limiter('bind', 10, 60_000), h(async (req, res) => {

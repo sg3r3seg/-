@@ -181,9 +181,9 @@ function updateChrome() {
   const b = shellEls.banner;
   if (n && ['OFFLINE', 'LICENSE_REVOKED', 'LICENSE_LOST', 'LEASE_INVALID'].includes(n.code)) {
     b.className = `banner ${n.code === 'OFFLINE' ? 'warn' : 'err'}`;
-    b.replaceChildren(h('span', { html: icon(n.code === 'OFFLINE' ? 'wifiOff' : 'shield') }),
+    b.replaceChildren(...[h('span', { html: icon(n.code === 'OFFLINE' ? 'wifiOff' : 'shield') }),
       h('span', {}, n.code === 'OFFLINE' ? `${t('offline_mode')} ${fmtDate(n.until)}` : t(n.text)),
-      n.code !== 'OFFLINE' ? h('button', { class: 'btn sm', onclick: () => navigate('account') }, t('nav_account')) : null);
+      n.code !== 'OFFLINE' ? h('button', { class: 'btn sm', onclick: () => navigate('account') }, t('nav_account')) : null].filter(Boolean));
   } else b.className = 'banner hidden';
   // Status chips
   const server = st.offline ? h('span', { class: 'chip warn', html: `${icon('wifiOff', 14)}<span>${t('offline')}</span>` }) : h('span', { class: 'chip ok', html: `${icon('wifi', 14)}<span>${t('online')}</span>` });
