@@ -1,0 +1,22 @@
+{
+  "name": "livex-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LiveX licensing, accounts, payments and update server",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/index.js",
+    "keys": "node scripts/gen-keys.js",
+    "admin": "node --disable-warning=ExperimentalWarning scripts/admin.js",
+    "publish-release": "node --disable-warning=ExperimentalWarning scripts/publish-release.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.js"
+  },
+  "dependencies": {
+    "express": "5.1.0",
+    "nodemailer": "6.10.1"
+  }
+}

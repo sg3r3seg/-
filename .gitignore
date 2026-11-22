@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+*.log
+.env
+server/data/
+server/keys/
+server/releases/files/
+app/release/
+.DS_Store
