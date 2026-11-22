@@ -74,7 +74,7 @@ class OverlayServer {
     this.clients.add(ws);
     ws.on('close', () => this.clients.delete(ws));
     ws.on('message', () => {}); // overlays are receive-only
-    ws.send(JSON.stringify({ type: 'hello', route: ws.route, style: this.styles[ws.route] || {}, state: this.state[ws.route] || null }));
+    ws.send(JSON.stringify({ type: 'hello', route: ws.route, lang: this.lang || 'en', style: this.styles[ws.route] || {}, state: this.state[ws.route] || null }));
   }
   // Send a message to overlays of a route; `sticky` state is replayed to new clients.
   broadcast(route, type, payload, { sticky = false } = {}) {
@@ -82,6 +82,11 @@ class OverlayServer {
     if (this.disabled?.has(route)) return;
     const msg = JSON.stringify({ type, payload });
     for (const c of this.clients) if (c.route === route && c.readyState === 1) c.send(msg);
+  }
+  setLang(lang) {
+    this.lang = lang === 'he' ? 'he' : 'en';
+    const msg = JSON.stringify({ type: 'lang', payload: this.lang });
+    for (const c of this.clients) if (c.readyState === 1) c.send(msg);
   }
   setStyle(route, style) {
     this.styles[route] = style;

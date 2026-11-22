@@ -101,6 +101,7 @@ app.whenReady().then(async () => {
       await overlay.start({ port: settings.get('overlayPort', 4777), key: settings.get('overlayKey') });
       for (const [route, style] of Object.entries(store.get('overlayStyles', {}))) overlay.setStyle(route, style);
       overlay.setDisabled(store.get('overlayDisabled', []));
+      overlay.setLang(settings.get('language', 'en'));
       hub.log('info', 'overlay', `overlay server on 127.0.0.1:${overlay.port}`);
       ctx.start();
     } catch (e) { hub.log('error', 'overlay', `cannot start overlay server: ${e.message}`); }

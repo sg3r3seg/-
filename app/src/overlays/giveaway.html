@@ -12,15 +12,19 @@ h1 { margin: 0; font-size: calc(var(--size) * 1.1); }
 .closed { opacity: .6; }
 </style></head><body><div class="g card" id="g"><h1 class="grad" id="title"></h1><div class="kw" id="kw"></div><div class="count" id="count"></div><div class="names" id="names"></div><div class="winner grad" id="win"></div></div>
 <script>
+let last = null;
 LiveXOverlay('giveaway', {
-  state: (s) => {
+  lang: () => { if (last) render(last); },
+  state: (s) => render(s),
+  winner: (w, replay) => { if (!replay) document.getElementById('win').textContent = '🏆 ' + w.name; },
+});
+function render(s) {
+    last = s;
     document.getElementById('title').textContent = s.title;
-    document.getElementById('kw').innerHTML = s.open ? `Type <b>${lxEsc(s.keyword)}</b> to join` : 'Entries closed';
-    document.getElementById('count').textContent = `${s.count} entries`;
+    document.getElementById('kw').innerHTML = s.open ? lxEsc(lxT('join')).replace("{k}", `<bdi dir="ltr"><b>${lxEsc(s.keyword)}</b></bdi>`) : lxEsc(lxT('closed'));
+    document.getElementById('count').textContent = `${s.count} ${lxT('entries')}`;
     document.getElementById('names').textContent = (s.recent || []).join(' · ');
     document.getElementById('g').classList.toggle('closed', !s.open && !s.winners.length);
     if (!s.winners.length) document.getElementById('win').textContent = '';
-  },
-  winner: (w, replay) => { if (!replay) document.getElementById('win').textContent = '🏆 ' + w.name; },
-});
+}
 </script></body></html>

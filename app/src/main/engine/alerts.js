@@ -10,10 +10,12 @@ const DEFAULT_RULES = [
   { id: 'raid', type: 'raid', enabled: true, minAmount: 0, template: '{user} is raiding with {count} viewers!', soundId: '', durationMs: 7000 },
   { id: 'share', type: 'share', enabled: false, minAmount: 0, template: '{user} shared the LIVE', soundId: '', durationMs: 4000 },
 ];
+const HE = { follow: '{user} התחיל/ה לעקוב! 💙', gift: '{user} שלח/ה {gift} x{count} 🎁', sub: '{user} נרשם/ה כמנוי! ⭐', superchat: '{user}: {amount} {currency} — {text}', bits: '{user} שלח/ה {amount} ביטס!', raid: '{user} עושה ריייד עם {count} צופים!', share: '{user} שיתף/ה את השידור' };
+const defaultsFor = (lang) => (lang === 'he' ? DEFAULT_RULES.map((r) => ({ ...r, template: HE[r.type] || r.template })) : DEFAULT_RULES);
 const TYPES = ['follow', 'gift', 'sub', 'superchat', 'bits', 'raid', 'share', 'like'];
 
 module.exports = (ctx) => {
-  const data = () => ctx.store.get('alerts', { enabled: true, rules: DEFAULT_RULES });
+  const data = () => ctx.store.get('alerts', { enabled: true, rules: defaultsFor(ctx.settings?.get?.('language')) });
   const save = (d) => { ctx.store.set('alerts', d); return d; };
 
   function show(rule, evt, test = false) {

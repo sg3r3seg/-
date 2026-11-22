@@ -95,6 +95,7 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
       ctx.hotkeys.refresh();
     }
     ctx.settings.patch(out);
+    if (out.language) ctx.overlay.setLang(out.language);
     if ('overlayPort' in out) ctx.restartOverlay().catch(() => {});
     return ctx.settings.data;
   });

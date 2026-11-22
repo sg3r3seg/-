@@ -16,12 +16,19 @@ window.LiveXOverlay = function connect(route, handlers) {
     if (st.text) document.body.style.color = st.text;
     handlers.style && handlers.style(st);
   };
+  function setLang(l) {
+    window.lxLang = l === 'he' ? 'he' : 'en';
+    document.documentElement.lang = window.lxLang;
+    document.documentElement.dir = window.lxLang === 'he' ? 'rtl' : 'ltr';
+    if (handlers.lang) handlers.lang(window.lxLang);
+  }
   function open() {
     const ws = new WebSocket(`ws://${location.host}/ws?key=${encodeURIComponent(key)}&route=${encodeURIComponent(route)}`);
     ws.onopen = () => { retry = 0; document.body.classList.remove('lx-offline'); };
     ws.onmessage = (m) => {
       let msg; try { msg = JSON.parse(m.data); } catch { return; }
-      if (msg.type === 'hello') { applyStyle(msg.style); if (msg.state && handlers[msg.state.type]) handlers[msg.state.type](msg.state.payload, true); return; }
+      if (msg.type === 'lang') { setLang(msg.payload); return; }
+      if (msg.type === 'hello') { setLang(msg.lang); applyStyle(msg.style); if (msg.state && handlers[msg.state.type]) handlers[msg.state.type](msg.state.payload, true); return; }
       if (msg.type === 'style') return applyStyle(msg.payload);
       if (handlers[msg.type]) handlers[msg.type](msg.payload, false);
     };
@@ -30,3 +37,9 @@ window.LiveXOverlay = function connect(route, handlers) {
   open();
 };
 window.lxEsc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Small overlay dictionary (overlay pages follow the LiveX app language).
+window.lxT = (k) => ({
+  en: { join: 'Type {k} to join', closed: 'Entries closed', entries: 'entries' },
+  he: { join: 'כתבו {k} כדי להשתתף', closed: 'ההרשמה נסגרה', entries: 'משתתפים' },
+}[window.lxLang || 'en'][k] || k);
