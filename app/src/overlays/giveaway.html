@@ -1,0 +1,26 @@
+<!doctype html><html data-overlay="giveaway"><head><meta charset="utf-8"><title>LiveX giveaway</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { padding: 20px; }
+.g { width: 520px; }
+h1 { margin: 0; font-size: calc(var(--size) * 1.1); }
+.kw { font-size: calc(var(--size) * .7); margin: 8px 0; }
+.kw b { color: var(--accent); }
+.count { font-size: calc(var(--size) * .6); opacity: .8; }
+.names { margin-top: 10px; font-size: calc(var(--size) * .5); opacity: .8; min-height: 1em; }
+.winner { margin-top: 14px; font-size: calc(var(--size) * 1.2); font-weight: 800; animation: pop .6s ease both; }
+.closed { opacity: .6; }
+</style></head><body><div class="g card" id="g"><h1 class="grad" id="title"></h1><div class="kw" id="kw"></div><div class="count" id="count"></div><div class="names" id="names"></div><div class="winner grad" id="win"></div></div>
+<script>
+LiveXOverlay('giveaway', {
+  state: (s) => {
+    document.getElementById('title').textContent = s.title;
+    document.getElementById('kw').innerHTML = s.open ? `Type <b>${lxEsc(s.keyword)}</b> to join` : 'Entries closed';
+    document.getElementById('count').textContent = `${s.count} entries`;
+    document.getElementById('names').textContent = (s.recent || []).join(' · ');
+    document.getElementById('g').classList.toggle('closed', !s.open && !s.winners.length);
+    if (!s.winners.length) document.getElementById('win').textContent = '';
+  },
+  winner: (w, replay) => { if (!replay) document.getElementById('win').textContent = '🏆 ' + w.name; },
+});
+</script></body></html>

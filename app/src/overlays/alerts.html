@@ -1,0 +1,22 @@
+<!doctype html><html data-overlay="alerts"><head><meta charset="utf-8"><title>LiveX alerts</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { display: flex; justify-content: center; align-items: flex-start; height: 100vh; padding-top: 60px; }
+.alert { display: flex; align-items: center; gap: 18px; font-size: var(--size); font-weight: 800; animation: pop .6s cubic-bezier(.2,1.4,.4,1) both; max-width: 90vw; }
+.alert.leave { animation: out .5s ease forwards; }
+.alert img { width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--accent); object-fit: cover; }
+.tag { font-size: 13px; letter-spacing: 3px; color: var(--accent); display: block; text-transform: uppercase; }
+.test { position: absolute; top: -12px; inset-inline-end: 12px; background: #ffc857; color: #000; font-size: 12px; padding: 2px 8px; border-radius: 6px; }
+.alert { position: relative; }
+</style></head><body><div id="stage"></div>
+<script>
+const q = []; let busy = false; const stage = document.getElementById('stage');
+function next() {
+  if (busy || !q.length) return; busy = true; const a = q.shift();
+  const el = document.createElement('div'); el.className = 'alert card';
+  el.innerHTML = (a.test ? '<span class="test">TEST</span>' : '') + (a.avatar || a.image ? `<img src="${lxEsc(a.image || a.avatar)}" alt="">` : '') + `<div><span class="tag">${lxEsc(a.type)}${a.platform && a.platform !== 'test' ? ' · ' + lxEsc(a.platform) : ''}</span><span class="grad">${lxEsc(a.text)}</span></div>`;
+  stage.appendChild(el);
+  setTimeout(() => { el.classList.add('leave'); setTimeout(() => { el.remove(); busy = false; next(); }, 500); }, a.durationMs || 5000);
+}
+LiveXOverlay('alerts', { alert: (a, replay) => { if (!replay) { q.push(a); next(); } } });
+</script></body></html>

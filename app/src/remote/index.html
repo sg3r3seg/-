@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LiveX Remote</title>
+<style>
+:root { --teal: #22e4d9; --line: #16314d; }
+* { box-sizing: border-box; } body { margin: 0; background: #04060c; color: #e6f1ff; font-family: 'Segoe UI', Heebo, Arial, sans-serif; padding: 16px; }
+h1 { letter-spacing: 6px; font-size: 22px; background: linear-gradient(90deg,#22e4d9,#4cc9ff); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 4px 0 2px; }
+.sub { color: #7aa6c9; font-size: 11px; letter-spacing: 3px; margin-bottom: 16px; }
+input { width: 100%; font-size: 28px; letter-spacing: 10px; text-align: center; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: #0b1424; color: #fff; }
+button { border: 1px solid var(--line); background: #0d1a2e; color: #e6f1ff; border-radius: 14px; padding: 16px 10px; font-size: 15px; font-weight: 700; width: 100%; }
+button.primary { background: linear-gradient(135deg,#22e4d9,#4cc9ff); color: #02121a; border: 0; }
+button:active { transform: scale(.97); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 18px; }
+h2 { font-size: 13px; color: #7aa6c9; letter-spacing: 2px; text-transform: uppercase; margin: 18px 0 8px; }
+.err { color: #ff8da1; margin-top: 10px; min-height: 1em; } .hidden { display: none; }
+#timer { font-size: 34px; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+</style></head><body>
+<h1>LIVEX</h1><div class="sub">REMOTE CONTROL</div>
+<div id="login"><p>Enter the PIN shown in LiveX → Remote Control</p><input id="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><p><button class="primary" id="go">Connect</button></p><div class="err" id="err"></div></div>
+<div id="panel" class="hidden">
+<h2>Timer</h2><div id="timer">--:--</div><div class="grid"><button data-a="timer-start">▶ Start</button><button data-a="timer-stop">⏸ Stop</button><button data-a="timer-add" data-sec="60">+1 min</button></div>
+<h2>Quick actions</h2><div class="grid"><button data-a="highlight">⭐ Highlight</button><button data-a="wheel">🎡 Spin wheel</button><button data-a="giveaway-draw">🏆 Draw winner</button></div>
+<h2>TTS</h2><div class="grid"><button data-a="tts-skip">⏭ Skip</button><button data-a="tts-pause">⏸ Pause</button><button data-a="tts-resume">▶ Resume</button></div>
+<h2>Sounds</h2><div class="grid" id="sounds"></div>
+<h2>Macros</h2><div class="grid" id="macros"></div><div class="err" id="err2"></div></div>
+<script src="/remote.js"></script></body></html>

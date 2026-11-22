@@ -1,0 +1,15 @@
+<!doctype html><html data-overlay="follower-goal"><head><meta charset="utf-8"><title>LiveX follower-goal</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { padding: 20px; }
+.goal { width: 640px; }
+.top { display: flex; justify-content: space-between; font-weight: 800; font-size: calc(var(--size) * .75); margin-bottom: 10px; }
+.bar { height: 30px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; border: 1px solid var(--accent); }
+.fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .8s cubic-bezier(.2,.9,.3,1); box-shadow: 0 0 20px var(--accent); }
+</style></head><body><div class="goal card"><div class="top"><span id="title" class="grad"></span><span id="num"></span></div><div class="bar"><div class="fill" id="fill"></div></div></div>
+<script>
+LiveXOverlay('follower-goal', { state: (g) => {
+  document.getElementById('title').textContent = g.title; document.getElementById('num').textContent = `${g.current} / ${g.target}`;
+  document.getElementById('fill').style.width = Math.min(100, (g.current / g.target) * 100) + '%';
+} });
+</script></body></html>

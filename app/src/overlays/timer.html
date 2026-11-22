@@ -1,0 +1,19 @@
+<!doctype html><html data-overlay="timer"><head><meta charset="utf-8"><title>LiveX timer</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { padding: 20px; }
+.t { display: inline-block; text-align: center; }
+.title { font-size: calc(var(--size) * .55); letter-spacing: 3px; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+.time { font-size: calc(var(--size) * 2.2); font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; }
+</style></head><body><div class="t card"><div class="title" id="title"></div><div class="time grad" id="time">00:00</div></div>
+<script>
+let st = null; let skew = 0;
+const fmt = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); const x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(x).padStart(2, '0'); };
+function render() {
+  if (!st) return; const now = Date.now() + skew; let ms;
+  if (st.mode === 'stopwatch') ms = st.running ? st.elapsedMs + (now - st.startedAt) : st.elapsedMs; else ms = st.running ? st.endsAt - now : st.remainingMs;
+  document.getElementById('time').textContent = fmt(ms); document.getElementById('title').textContent = st.title || (st.mode === 'subathon' ? 'SUBATHON' : '');
+}
+setInterval(render, 250);
+LiveXOverlay('timer', { state: (s) => { st = s; skew = s.serverNow - Date.now(); render(); } });
+</script></body></html>

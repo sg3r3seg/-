@@ -1,0 +1,20 @@
+<!doctype html><html data-overlay="chat"><head><meta charset="utf-8"><title>LiveX chat</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px; }
+.msg { font-size: calc(var(--size) * .7); margin: 6px 0; padding: 8px 14px; border-radius: 14px; background: var(--bg); border-inline-start: 4px solid var(--accent); animation: slide .35s ease both; unicode-bidi: plaintext; }
+.msg b { color: var(--accent); margin-inline-end: 8px; }
+.pf { font-size: 11px; opacity: .6; margin-inline-end: 6px; text-transform: uppercase; }
+.bot { border-color: #ffc857; }
+</style></head><body><div id="list"></div>
+<script>
+const list = document.getElementById('list'); let max = 12;
+LiveXOverlay('chat', {
+  style: (s) => { if (s.maxMessages) max = Number(s.maxMessages) || 12; },
+  message: (m) => {
+    const d = document.createElement('div'); d.className = 'msg' + (m.bot ? ' bot' : '');
+    d.innerHTML = `<span class="pf">${lxEsc(m.platform)}</span><b>${lxEsc(m.user && m.user.name)}</b>${lxEsc(m.text)}`;
+    list.appendChild(d); while (list.children.length > max) list.firstChild.remove();
+  },
+});
+</script></body></html>

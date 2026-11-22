@@ -1,0 +1,19 @@
+<!doctype html><html data-overlay="tts"><head><meta charset="utf-8"><title>LiveX tts</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { height: 100vh; display: flex; align-items: flex-end; justify-content: center; padding: 30px; }
+.bubble { font-size: calc(var(--size) * .8); max-width: 900px; display: none; animation: pop .45s ease both; unicode-bidi: plaintext; }
+.bubble.show { display: block; }
+.who { color: var(--accent); font-weight: 800; font-size: .7em; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+.eq { display: inline-flex; gap: 3px; align-items: flex-end; height: 14px; }
+.eq i { width: 3px; background: var(--accent); animation: eq 0.8s infinite ease-in-out; }
+.eq i:nth-child(2) { animation-delay: .2s } .eq i:nth-child(3) { animation-delay: .4s }
+@keyframes eq { 0%,100% { height: 4px } 50% { height: 14px } }
+</style></head><body><div class="bubble card" id="b"><div class="who"><span class="eq"><i></i><i></i><i></i></span><span id="who"></span></div><div id="t"></div></div>
+<script>
+const b = document.getElementById('b'); let cur = null;
+LiveXOverlay('tts', {
+  speak: (m) => { cur = m.id; document.getElementById('who').textContent = m.user || 'LiveX TTS'; document.getElementById('t').textContent = m.text; b.classList.add('show'); },
+  done: (m) => { if (m.id === cur) b.classList.remove('show'); },
+});
+</script></body></html>

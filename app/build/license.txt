@@ -1,0 +1,15 @@
+LiveX — End User License Agreement (summary)
+
+1. LiveX is licensed, not sold. A license is personal and linked to one LiveX account
+   (User ID) and to the authorized computer(s) allowed by the license policy.
+2. A one-time activation code can be used only once and only by the account that purchased it.
+3. Moving a license to a new computer is done from your account on the official LiveX website
+   after identity verification, subject to the transfer policy.
+4. LiveX connects to TikTok LIVE, YouTube LIVE, Kick, Twitch and Discord using official APIs or
+   integration providers with your permission. You are responsible for complying with each
+   platform's terms of service.
+5. AI voice creation from a recording requires the explicit consent of the voice owner.
+6. Licenses may be revoked for fraud, chargebacks or abuse.
+7. LiveX is provided "as is" without warranty of any kind to the extent permitted by law.
+
+Your settings are stored in %APPDATA%\LiveX and are kept when LiveX is updated or reinstalled.

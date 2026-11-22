@@ -1,0 +1,32 @@
+<!doctype html><html data-overlay="wheel"><head><meta charset="utf-8"><title>LiveX wheel</title>
+<link rel="stylesheet" href="/assets/overlay.css"><script src="/assets/overlay.js"></script>
+<style>
+body { height: 100vh; display: grid; place-items: center; }
+.wrap { position: relative; width: 520px; height: 520px; }
+canvas { width: 100%; height: 100%; }
+.pin { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 36px solid var(--accent); filter: drop-shadow(0 0 8px var(--accent)); }
+.res { position: absolute; bottom: -70px; left: 0; right: 0; text-align: center; font-size: var(--size); font-weight: 800; }
+</style></head><body><div class="wrap"><div class="pin"></div><canvas id="c" width="1040" height="1040"></canvas><div class="res grad" id="res"></div></div>
+<script>
+const c = document.getElementById('c'); const g = c.getContext('2d'); let items = []; let angle = 0;
+const colors = ['#22e4d9', '#2f6bff', '#4cc9ff', '#0b2a4a', '#13b5c8', '#1d3f8f'];
+function draw() {
+  const n = items.length; g.clearRect(0, 0, 1040, 1040); if (!n) return;
+  const seg = (Math.PI * 2) / n;
+  for (let i = 0; i < n; i++) {
+    g.beginPath(); g.moveTo(520, 520); g.arc(520, 520, 500, angle + i * seg - Math.PI / 2, angle + (i + 1) * seg - Math.PI / 2); g.closePath();
+    g.fillStyle = colors[i % colors.length]; g.fill(); g.strokeStyle = '#04060c'; g.lineWidth = 6; g.stroke();
+    g.save(); g.translate(520, 520); g.rotate(angle + (i + .5) * seg - Math.PI / 2); g.textAlign = 'right'; g.fillStyle = '#fff'; g.font = 'bold 40px Segoe UI, Heebo, sans-serif'; g.fillText(items[i].slice(0, 18), 470, 14); g.restore();
+  }
+  g.beginPath(); g.arc(520, 520, 60, 0, Math.PI * 2); g.fillStyle = '#04060c'; g.fill(); g.strokeStyle = '#22e4d9'; g.lineWidth = 8; g.stroke();
+}
+LiveXOverlay('wheel', {
+  items: (p) => { items = p.items || []; draw(); },
+  spin: (p, replay) => {
+    if (replay) return; items = p.items; document.getElementById('res').textContent = '';
+    const seg = (Math.PI * 2) / items.length;
+    const target = Math.PI * 2 * 8 - (p.index + 0.5) * seg; const start = angle % (Math.PI * 2); const t0 = performance.now(); const dur = p.durationMs || 6000;
+    (function f(t) { const k = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - k, 4); angle = start + (target - start) * e; draw(); if (k < 1) requestAnimationFrame(f); else document.getElementById('res').textContent = items[p.index]; })(t0);
+  },
+});
+</script></body></html>

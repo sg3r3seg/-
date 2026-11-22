@@ -1,0 +1,48 @@
+{
+  "name": "livex",
+  "productName": "LiveX",
+  "version": "1.0.0",
+  "description": "LiveX — ONE PLATFORM. EVERY CREATOR. Live-stream management for creators.",
+  "author": "LiveX",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "icons": "node scripts/make-icons.js",
+    "dist:win": "electron-builder --win nsis --x64 --publish never"
+  },
+  "dependencies": {
+    "ws": "8.18.3"
+  },
+  "devDependencies": {
+    "electron": "44.11.5",
+    "electron-builder": "26.0.12"
+  },
+  "build": {
+    "appId": "app.livex.desktop",
+    "productName": "LiveX",
+    "copyright": "LiveX",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["src/**/*", "config/livex.config.json", "package.json", "!**/*.map"],
+    "asar": true,
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
+      "artifactName": "LiveX-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LiveX",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "license": "build/license.txt"
+    }
+  }
+}
