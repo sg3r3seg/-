@@ -9,14 +9,20 @@ export default async function account(root, app) {
   const st = app.state; const u = st.user || {};
   const msg = h('div', { class: 'msg' });
   const codeInput = h('input', { class: 'input code-input mono', placeholder: 'LVX-XXXX-XXXX-XXXX-XXXX-XXXX', maxlength: 40, autocomplete: 'off', spellcheck: 'false' });
-  codeInput.addEventListener('input', () => {
-    const raw = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^LVX/, '').slice(0, 20);
-    codeInput.value = raw ? `LVX-${raw.match(/.{1,4}/g).join('-')}` : '';
-  });
+  // Normalize on paste/blur only (formatting per keystroke breaks manual typing of the "LVX" prefix).
+  const normalize = () => {
+    let raw = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (raw.length > 20 && raw.startsWith('LVX')) raw = raw.slice(3);
+    raw = raw.slice(0, 20);
+    if (raw.length === 20) codeInput.value = `LVX-${raw.match(/.{4}/g).join('-')}`;
+  };
+  codeInput.addEventListener('blur', normalize);
+  codeInput.addEventListener('paste', () => setTimeout(normalize, 0));
   const activateBtn = h('button', { class: 'btn primary' }, h('span', { html: icon('key') }), t('activate'));
   activateBtn.onclick = async () => {
     activateBtn.disabled = true; msg.className = 'msg';
     try {
+      normalize();
       const r = await call('session:activate', codeInput.value);
       app.state = r.state;
       msg.className = 'msg show ok'; msg.textContent = `${t('activation_success')} ${PRODUCT[r.license.product] || r.license.product} — ${r.license.licenseId}`;
