@@ -21,7 +21,7 @@ export function eventLine(e) {
     default: text = e.text || e.type;
   }
   return h('div', { class: 'feed-item' }, h('span', { class: `feed-icon t-${e.type || e.kind}`, html: icon(TYPE_ICON[e.type || e.kind] || 'zap', 15) }),
-    h('span', { class: 'feed-pf' }, e.platform || e.kind || ''), h('span', { class: 'feed-text' }, who, who ? ' ' : '', text), h('span', { class: 'feed-time' }, fmtTime(e.ts)));
+    h('span', { class: 'feed-pf' }, e.platform || e.kind || ''), h('span', { class: 'feed-text' }, who, who ? ' ' : '', h('bdi', {}, text)), h('span', { class: 'feed-time' }, fmtTime(e.ts)));
 }
 
 export default async function dashboard(root, app) {

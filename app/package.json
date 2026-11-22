@@ -2,7 +2,7 @@
   "name": "livex",
   "productName": "LiveX",
   "version": "1.0.0",
-  "description": "LiveX — ONE PLATFORM. EVERY CREATOR. Live-stream management for creators.",
+  "description": "LiveX \u2014 ONE PLATFORM. EVERY CREATOR. Live-stream management for creators.",
   "author": "LiveX",
   "license": "UNLICENSED",
   "private": true,
@@ -11,38 +11,57 @@
     "start": "electron .",
     "test": "node --test test/*.test.js",
     "icons": "node scripts/make-icons.js",
-    "dist:win": "electron-builder --win nsis --x64 --publish never"
+    "dist:win": "node scripts/build-installer.js"
   },
   "dependencies": {
     "ws": "8.18.3"
   },
   "devDependencies": {
     "electron": "44.11.5",
-    "electron-builder": "26.0.12"
+    "electron-builder": "26.0.12",
+    "resedit": "^2.0.3"
   },
   "build": {
     "appId": "app.livex.desktop",
     "productName": "LiveX",
     "copyright": "LiveX",
-    "directories": { "output": "release", "buildResources": "build" },
-    "files": ["src/**/*", "config/livex.config.json", "package.json", "!**/*.map"],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "config/livex.config.json",
+      "package.json",
+      "!**/*.map"
+    ],
     "asar": true,
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.ico",
-      "artifactName": "LiveX-Setup-${version}.${ext}"
+      "artifactName": "LiveX-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
     },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "LiveX",
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
-      "license": "build/license.txt"
+    "afterPack": "scripts/after-pack.js",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": true
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sg3r3seg/-.git"
   }
 }

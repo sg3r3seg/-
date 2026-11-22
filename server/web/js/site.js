@@ -22,6 +22,7 @@
       transferring: 'Confirming transfer…', transfer_done: 'The license was removed from the old computer. Sign in to LiveX on the new computer and choose "Use this computer".',
       checkout_title: 'Checkout', sandbox_banner: 'SANDBOX PAYMENT — development server. No real money is charged.', pay_sandbox: 'Complete sandbox payment', paid_ok: 'Payment confirmed. Your license and one-time activation code are ready in your account.',
       payments_unavailable: 'Payments are not available on this server yet.', login_to_buy: 'Sign in to purchase.', download: 'Download LiveX for Windows', no_release: 'No installer has been published on this server yet.',
+      st_active: 'Active', st_pending_activation: 'Awaiting activation', st_revoked: 'Revoked', st_issued: 'Issued', st_used: 'Used', st_paid: 'Paid', st_pending: 'Pending', st_failed: 'Failed', st_deactivated: 'Removed', st_expired: 'Expired',
       last_seen: 'Last seen', os: 'OS', product: 'Product', amount: 'Amount', date: 'Date', redirecting: 'Redirecting to secure checkout…',
     },
     he: {
@@ -44,6 +45,7 @@
       transferring: 'מאשר העברה…', transfer_done: 'הרישיון הוסר מהמחשב הישן. התחבר ל-LiveX במחשב החדש ובחר "שימוש במחשב זה".',
       checkout_title: 'תשלום', sandbox_banner: 'תשלום SANDBOX — שרת פיתוח. לא מתבצע חיוב אמיתי.', pay_sandbox: 'השלמת תשלום Sandbox', paid_ok: 'התשלום אושר. הרישיון וקוד ההפעלה החד-פעמי מחכים באזור האישי.',
       payments_unavailable: 'תשלומים עדיין לא זמינים בשרת זה.', login_to_buy: 'יש להתחבר כדי לרכוש.', download: 'הורדת LiveX ל-Windows', no_release: 'עדיין לא פורסם קובץ התקנה בשרת זה.',
+      st_active: 'פעיל', st_pending_activation: 'ממתין להפעלה', st_revoked: 'בוטל', st_issued: 'הונפק', st_used: 'נוצל', st_paid: 'שולם', st_pending: 'ממתין', st_failed: 'נכשל', st_deactivated: 'הוסר', st_expired: 'פג תוקף',
       last_seen: 'נראה לאחרונה', os: 'מערכת הפעלה', product: 'מוצר', amount: 'סכום', date: 'תאריך', redirecting: 'מעביר לתשלום מאובטח…',
     },
   };
@@ -57,6 +59,7 @@
   const t = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || k;
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const st = (s) => t(`st_${s}`);
   const fmtDate = (ms) => (ms ? new Date(ms).toLocaleString(lang === 'he' ? 'he-IL' : 'en-GB') : '—');
 
   function applyLang() {
@@ -183,7 +186,7 @@
       const msg = $('#checkoutMsg');
       try {
         const { order } = await api('GET', `/api/shop/orders/${encodeURIComponent(orderId)}`);
-        $('#orderInfo').innerHTML = `<dl class="kv"><dt>Order</dt><dd class="mono">${esc(order.id)}</dd><dt>${t('product')}</dt><dd>${esc(order.product_code)}</dd><dt>${t('amount')}</dt><dd>₪${(order.amount_agorot / 100).toFixed(2)}</dd><dt>${t('status')}</dt><dd><span class="badge ${esc(order.status)}">${esc(order.status)}</span></dd></dl>`;
+        $('#orderInfo').innerHTML = `<dl class="kv"><dt>Order</dt><dd class="mono">${esc(order.id)}</dd><dt>${t('product')}</dt><dd>${esc(order.product_code)}</dd><dt>${t('amount')}</dt><dd>₪${(order.amount_agorot / 100).toFixed(2)}</dd><dt>${t('status')}</dt><dd><span class="badge ${esc(order.status)}">${esc(st(order.status))}</span></dd></dl>`;
         const btn = $('#payBtn');
         if (order.status !== 'pending') btn.disabled = true;
         btn.addEventListener('click', async () => {
@@ -204,14 +207,14 @@
       if (ac && ac.code) codeHtml = `<p class="muted">${t('activation_code')}</p><div class="code-box">${esc(ac.code)}</div><p class="muted" style="font-size:12px">⏳ ${fmtDate(ac.expiresAt)}</p>`;
       else if (ac && ac.status === 'used') codeHtml = `<p class="muted">✓ ${t('code_used')} — ${fmtDate(ac.usedAt)}</p>`;
       else if (ac && ac.status === 'expired') codeHtml = `<p class="msg show err">${t('code_expired')}</p>`;
-      return `<div class="card"><h3 style="margin-top:0">${esc(l.product === 'BUNDLE' ? 'LiveX COMPLETE BUNDLE' : `LiveX ${l.product}`)} <span class="badge ${esc(l.status)}">${esc(l.status)}</span></h3>
+      return `<div class="card"><h3 style="margin-top:0">${esc(l.product === 'BUNDLE' ? 'LiveX COMPLETE BUNDLE' : `LiveX ${l.product}`)} <span class="badge ${esc(l.status)}">${esc(st(l.status))}</span></h3>
         <dl class="kv"><dt>${t('holder')}</dt><dd>${esc(l.holderName)}</dd><dt>${t('user_id')}</dt><dd class="mono">${esc(l.userId)}</dd><dt>${t('email')}</dt><dd>${esc(l.email)}</dd>
         <dt>${t('license_id')}</dt><dd class="mono">${esc(l.licenseId)}</dd><dt>${t('personal_code')}</dt><dd class="mono">${esc(l.personalCode)}</dd>
         <dt>${t('purchased')}</dt><dd>${fmtDate(l.purchasedAt)}</dd><dt>${t('activated')}</dt><dd>${fmtDate(l.activatedAt)}</dd>
         <dt>${t('device')}</dt><dd>${l.device ? `${esc(l.device.name)} <span class="mono muted">${esc(l.device.deviceId)}</span>` : '—'}</dd></dl>${codeHtml}</div>`;
     }).join('') : `<p class="muted">${t('no_licenses')} <a href="/index.html#pricing">${t('pricing')}</a></p>`;
-    $('#devices').innerHTML = a.devices.length ? `<table><tr><th>${t('device')}</th><th>${t('os')}</th><th>${t('license_id')}</th><th>${t('activated')}</th><th>${t('last_seen')}</th><th>${t('status')}</th><th></th></tr>${a.devices.map((d) => `<tr><td>${esc(d.name)}<div class="mono muted" style="font-size:11px">${esc(d.deviceId)}</div></td><td>${esc(d.os)}</td><td class="mono">${esc(d.licenseId)}</td><td>${fmtDate(d.activatedAt)}</td><td>${fmtDate(d.lastSeenAt)}</td><td><span class="badge ${esc(d.status)}">${esc(d.status)}</span></td><td>${d.status === 'active' ? `<button class="btn danger" data-transfer="${esc(d.deviceId)}">${t('transfer')}</button>` : ''}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
-    $('#orders').innerHTML = a.orders.length ? `<table><tr><th>Order</th><th>${t('product')}</th><th>${t('amount')}</th><th>${t('status')}</th><th>${t('date')}</th></tr>${a.orders.map((o) => `<tr><td class="mono">${esc(o.id)}</td><td>${esc(o.product_code)}</td><td>₪${(o.amount_agorot / 100).toFixed(2)}</td><td><span class="badge ${esc(o.status)}">${esc(o.status)}</span></td><td>${fmtDate(o.created_at)}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
+    $('#devices').innerHTML = a.devices.length ? `<table><tr><th>${t('device')}</th><th>${t('os')}</th><th>${t('license_id')}</th><th>${t('activated')}</th><th>${t('last_seen')}</th><th>${t('status')}</th><th></th></tr>${a.devices.map((d) => `<tr><td>${esc(d.name)}<div class="mono muted" style="font-size:11px">${esc(d.deviceId)}</div></td><td>${esc(d.os)}</td><td class="mono">${esc(d.licenseId)}</td><td>${fmtDate(d.activatedAt)}</td><td>${fmtDate(d.lastSeenAt)}</td><td><span class="badge ${esc(d.status)}">${esc(st(d.status))}</span></td><td>${d.status === 'active' ? `<button class="btn danger" data-transfer="${esc(d.deviceId)}">${t('transfer')}</button>` : ''}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
+    $('#orders').innerHTML = a.orders.length ? `<table><tr><th>Order</th><th>${t('product')}</th><th>${t('amount')}</th><th>${t('status')}</th><th>${t('date')}</th></tr>${a.orders.map((o) => `<tr><td class="mono">${esc(o.id)}</td><td>${esc(o.product_code)}</td><td>₪${(o.amount_agorot / 100).toFixed(2)}</td><td><span class="badge ${esc(o.status)}">${esc(st(o.status))}</span></td><td>${fmtDate(o.created_at)}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
     document.querySelectorAll('[data-transfer]').forEach((b) => b.addEventListener('click', async () => {
       const pw = window.prompt(t('transfer_prompt'));
       if (!pw) return;

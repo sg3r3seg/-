@@ -8,3 +8,4 @@ server/keys/
 server/releases/files/
 app/release/
 .DS_Store
+server/releases/

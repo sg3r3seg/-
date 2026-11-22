@@ -142,6 +142,13 @@ app.whenReady().then(async () => {
   platforms.on('status', (s) => send('platform:status', s));
   updater.listeners.add((s) => send('update:state', s));
 
+  // Windows toast notifications need a Start-menu shortcut carrying our AppUserModelID.
+  if (app.isPackaged && process.platform === 'win32') {
+    try {
+      const lnk = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'LiveX.lnk');
+      shell.writeShortcutLink(lnk, 'replace', { target: process.execPath, appUserModelId: 'app.livex.desktop', icon: process.execPath, iconIndex: 0, description: 'LiveX — ONE PLATFORM. EVERY CREATOR.' });
+    } catch { /* non-fatal */ }
+  }
   hardenSession();
   ipc.register(ctx, { rendererUrl: RENDERER_URL, getWindow: () => win, logs });
   createWindow(settings);

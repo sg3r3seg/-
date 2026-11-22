@@ -27,7 +27,7 @@ class Updater {
       if (r.manifest.platform !== 'win32') throw new Error('Update is not for this platform');
       this.manifest = r.manifest;
       this.emit({ phase: 'available', version: r.manifest.version, notes: r.manifest.notes, size: r.manifest.size, checkedAt: Date.now() });
-    } catch (e) { this.emit({ phase: 'error', error: e.message }); }
+    } catch (e) { this.manifest = null; this.emit({ phase: 'error', error: e.message }); }
     return this.state;
   }
 
@@ -68,7 +68,7 @@ class Updater {
   install() {
     if (!this.file || !fs.existsSync(this.file)) throw new Error('Update not downloaded');
     if (process.platform !== 'win32') throw new Error('Installer can only run on Windows');
-    spawn(this.file, ['--updated'], { detached: true, stdio: 'ignore' }).unref();
+    spawn(this.file, [], { detached: true, stdio: 'ignore' }).unref(); // installer UI; it closes LiveX before replacing files
     setTimeout(() => app.quit(), 500);
     return true;
   }

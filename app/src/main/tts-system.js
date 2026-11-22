@@ -6,15 +6,15 @@ const { execFile } = require('node:child_process');
 // stdin as JSON — never interpolated into the command line.
 const PS_LIST = `Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer;
 $s.GetInstalledVoices() | Where-Object { $_.Enabled } | ForEach-Object { $v=$_.VoiceInfo; [pscustomobject]@{ name=$v.Name; culture=$v.Culture.Name; gender=$v.Gender.ToString() } } | ConvertTo-Json -Compress`;
-const PS_SYNTH = `$ErrorActionPreference='Stop'; [Console]::InputEncoding=[Text.Encoding]::UTF8;
-$req = [Console]::In.ReadToEnd() | ConvertFrom-Json; Add-Type -AssemblyName System.Speech;
+const PS_SYNTH = `$ErrorActionPreference='Stop';
+$in = [Console]::OpenStandardInput(); $buf = New-Object System.IO.MemoryStream; $in.CopyTo($buf);
+$req = [Text.Encoding]::UTF8.GetString($buf.ToArray()) | ConvertFrom-Json; Add-Type -AssemblyName System.Speech;
 $s = New-Object System.Speech.Synthesis.SpeechSynthesizer;
 if ($req.voice) { try { $s.SelectVoice($req.voice) } catch {} }
 $s.Rate = [int]$req.rate; $s.Volume = [int]$req.volume;
 $ms = New-Object System.IO.MemoryStream; $s.SetOutputToWaveStream($ms);
 $p = New-Object System.Speech.Synthesis.PromptBuilder; $p.Culture = $s.Voice.Culture;
-$st = New-Object System.Speech.Synthesis.PromptStyle; $st.Emphasis = 'NotSet';
-$p.AppendSsmlMarkup('<prosody pitch="' + $req.pitch + '">' + [System.Security.SecurityElement]::Escape($req.text) + '</prosody>');
+try { $p.AppendSsmlMarkup('<prosody pitch="' + $req.pitch + '">' + [System.Security.SecurityElement]::Escape($req.text) + '</prosody>') } catch { $p = New-Object System.Speech.Synthesis.PromptBuilder; $p.AppendText($req.text) }
 $s.Speak($p); $s.Dispose(); [Console]::Out.Write([Convert]::ToBase64String($ms.ToArray()))`;
 
 const supported = () => process.platform === 'win32';

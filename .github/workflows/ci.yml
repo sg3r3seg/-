@@ -1,0 +1,43 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.13' }
+      - run: npm ci
+        working-directory: server
+      - run: npm test
+        working-directory: server
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.13' }
+      - run: npm ci
+        working-directory: app
+      - run: npm test
+        working-directory: app
+  windows-installer:
+    runs-on: windows-latest
+    needs: [server, app]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22.13' }
+      - run: choco install nsis -y
+      - run: npm ci
+        working-directory: app
+      - run: node scripts/build-installer.js
+        working-directory: app
+        env:
+          MAKENSIS: C:\Program Files (x86)\NSIS\makensis.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LiveX-Setup
+          path: app/release/LiveX-Setup-*.exe
