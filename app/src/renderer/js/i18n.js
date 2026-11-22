@@ -164,6 +164,7 @@ const D = {
   max_repeats: ['Same message limit (30s)', 'מגבלת הודעה זהה (30 שניות)'], max_per_10s: ['Messages per 10s', 'הודעות ל-10 שניות'], warn_template: ['Warning message', 'הודעת אזהרה'],
   err_TTS_DISABLED: ['LiveX TTS is turned off — enable it first', 'LiveX TTS כבוי — יש להפעיל אותו קודם'],
   pos_top: ['Top', 'למעלה'], pos_middle: ['Middle', 'אמצע'], pos_bottom: ['Bottom', 'למטה'], style_position: ['Vertical position', 'מיקום אנכי'], overlay_off: ['Disabled', 'כבוי'],
+  not_sent_short: ['not sent — no chat-write connection', 'לא נשלח — אין חיבור עם הרשאת כתיבה'],
   // generic
   confirm: ['Please confirm', 'אישור'], cancel: ['Cancel', 'ביטול'], ok: ['OK', 'אישור'],
   // errors (codes from server / main process)

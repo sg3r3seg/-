@@ -74,7 +74,8 @@ export default async function dashboard(root, app) {
     feed.prepend(eventLine(e));
     while (feed.children.length > 60) feed.lastChild.remove();
   });
-  const offAct = window.livex.on('activity', (a) => { feed.querySelector('.empty')?.remove(); feed.prepend(eventLine({ ...a, text: a.text + (a.note ? ` (${a.note})` : '') })); });
+  const note = (a) => (!a.note ? '' : ` (${Array.isArray(a.sent) && !a.sent.length ? t('not_sent_short') : a.note})`);
+  const offAct = window.livex.on('activity', (a) => { feed.querySelector('.empty')?.remove(); feed.prepend(eventLine({ ...a, text: a.text + note(a) })); });
   const offSt = window.livex.on('platform:status', () => renderPlatforms());
   return () => { offEv(); offAct(); offSt(); };
 }
