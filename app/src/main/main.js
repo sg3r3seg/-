@@ -109,6 +109,7 @@ app.whenReady().then(async () => {
   ctx.startRemote = () => remote.start({
     port: settings.get('remotePort', 4778),
     actions: {
+      lang: () => settings.get('language', 'en'),
       state: async () => ({ sounds: ctx.sounds.list().map((x) => ({ id: x.id, name: x.name, color: x.color })), macros: ctx.macros.list().map((m) => ({ id: m.id, name: m.name })), timer: ctx.timer.get(), tts: session.has('tts') ? ctx.tts.state() : null, giveaway: { open: ctx.giveaway.get().open, total: ctx.giveaway.get().total } }),
       run: async (action, b) => {
         if (!session.has('pro')) throw new Error('LiveX PRO license required');

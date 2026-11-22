@@ -41,6 +41,7 @@ class RemoteServer {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
       fs.createReadStream(path.join(__dirname, '..', 'remote', 'remote.js')).pipe(res); return;
     }
+    if (req.method === 'GET' && u.pathname === '/api/lang') return this.json(res, 200, { lang: this.actions.lang ? this.actions.lang() : 'en' });
     const ip = req.socket.remoteAddress;
     if (req.method === 'POST' && u.pathname === '/api/pin') {
       const f = this.fails.get(ip) || { n: 0, until: 0 };

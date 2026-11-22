@@ -1,6 +1,9 @@
 'use strict';
 (() => {
   let token = sessionStorage.getItem('lxr') || '';
+  const T = { he: { pinHint: 'הזינו את קוד ה-PIN שמופיע ב-LiveX ← שלט רחוק', connect: 'התחברות', timer: 'טיימר', start: '▶ התחלה', stop: '⏸ עצירה', plus1: '+1 דקה', quick: 'פעולות מהירות', highlight: '⭐ רגע נבחר', wheel: '🎡 גלגל מזל', draw: '🏆 הגרלת זוכה', tts: 'הקראה (TTS)', skip: '⏭ דילוג', pause: '⏸ השהיה', resume: '▶ המשך', sounds: 'סאונדים', macros: 'מאקרו' } };
+  const applyLang = (l) => { const d = T[l]; document.documentElement.lang = l; document.documentElement.dir = l === 'he' ? 'rtl' : 'ltr'; if (!d) return; document.querySelectorAll('[data-t]').forEach((el) => { if (d[el.dataset.t]) el.textContent = d[el.dataset.t]; }); };
+  fetch('/api/lang').then((r) => r.json()).then((j) => applyLang(j.lang)).catch(() => {});
   const $ = (id) => document.getElementById(id);
   const api = async (method, url, body) => {
     const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: body ? JSON.stringify(body) : undefined });
