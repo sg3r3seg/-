@@ -1,13 +1,25 @@
-## LiveX 1.0.0 — Preview (test build)
+## LiveX 1.0.0 — Preview (גרסת בדיקה)
 
-**ONE PLATFORM. EVERY CREATOR.** — live-stream management for TikTok LIVE, YouTube LIVE, Kick and Twitch.
+**ONE PLATFORM. EVERY CREATOR.** — ניהול שידורים חיים ל-TikTok LIVE, YouTube LIVE, Kick ו-Twitch.
 
-Download **LiveX-Setup-1.0.0.exe** below (Windows 10/11, 64-bit). Built automatically on a Windows runner from this repository; SHA-256 in `SHA256SUMS.txt`.
+### התקנה על Windows (10/11, 64-bit)
 
-### Important — this is a preview build
-- It connects to a **local LiveX test server** at `http://127.0.0.1:8787` (see `server/` and the README). Sign-in and license activation work only when that server is running with the matching keys. The production build will point to the official HTTPS server.
-- The installer is **not code-signed** yet, so Windows SmartScreen will show a warning ("More info" → "Run anyway").
-- Payments on the test server run in **sandbox** mode (no real charges).
+1. **הורד** את `LiveX-Setup-1.0.0.exe` מהרשימה למטה (Assets) והפעל אותו.
+   Windows יציג אזהרת SmartScreen כי הקובץ עדיין לא חתום: לחץ **More info → Run anyway**.
+2. **הפעל את שרת LiveX** (בגרסת הבדיקה השרת רץ על המחשב שלך):
+   - התקן [Node.js 22](https://nodejs.org) (פעם אחת).
+   - הורד את `LiveX-Test-Server.zip` מהרשימה למטה וחלץ אותו לתיקייה.
+   - חלץ לאותה תיקייה את `livex-dev-server-keys.zip` (קובץ המפתחות שקיבלת בנפרד — הוא לא מפורסם כאן).
+   - לחץ פעמיים על `start-server.cmd` והשאר את החלון פתוח.
+3. **צור חשבון** באתר שנפתח (`http://127.0.0.1:8787`), אשר את המייל (במצב בדיקה ההודעה נשמרת בתיקייה `data\outbox` של השרת), **קנה במצב Sandbox** (ללא חיוב) וקבל קוד הפעלה באזור האישי.
+4. **פתח את LiveX**, התחבר, ובמסך "חשבון ורישיון" הזן את קוד ההפעלה.
 
-### What's inside
-Accounts & licenses with one-time activation codes, device binding and transfer · LiveX TTS + Voice Studio · Live Alerts (image/GIF, sound) · Chat Bot with commands and moderation · Sound Board · Macros · Remote Control · Timer/Subathon · Challenges · Giveaway & Wheel · Overlay Editor & Overlay Center (7 OBS overlays) · Schedule · Community · Highlights · Analytics · Performance · Diagnostics · Hebrew/English (RTL).
+SHA-256 של הקבצים ב-`SHA256SUMS.txt`.
+
+### חשוב לדעת
+- זו גרסת בדיקה: היא עובדת מול שרת מקומי. הגרסה הרשמית תעבוד מול שרת LiveX מאובטח (HTTPS) בלי צורך בשלב 2.
+- תשלומים במצב Sandbox בלבד — לא מתבצע חיוב אמיתי.
+- ההגדרות נשמרות ב-`%APPDATA%\LiveX` ונשמרות גם בעדכון ובהסרה.
+
+### מה בתוכנה
+חשבונות ורישיונות עם קוד הפעלה חד-פעמי · LiveX TTS + Voice Studio · התראות (GIF, צליל) · צ׳אט בוט עם פקודות וסינון · לוח סאונד · מאקרו · שלט רחוק · טיימר/סאבאתון · אתגרים · הגרלות וגלגל מזל · עורך ומרכז Overlays ל-OBS · לוח שידורים · קהילה · רגעים נבחרים · אנליטיקה · ביצועים · אבחון · עברית/English.
