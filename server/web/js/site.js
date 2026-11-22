@@ -13,7 +13,7 @@
       create_account: 'Create account', sign_in: 'Sign in', forgot: 'Forgot password?', send_reset: 'Send reset link', new_password: 'New password', save_password: 'Save new password',
       have_account: 'Already have an account?', no_account: 'No account yet?',
       registered: 'Account created. We sent a verification link to your email. Your User ID: ',
-      dev_outbox: ' (Development server: email was written to the server outbox, SMTP is not configured.)',
+      dev_outbox: ' (Test server: no real email is sent — open the local mailbox below to find the link.)',
       verifying: 'Verifying…', verified: 'Email verified. You can now sign in.', reset_sent: 'If an account exists for this email, a reset link was sent.', reset_done: 'Password changed. Please sign in.',
       account: 'My account', profile: 'Profile', user_id: 'User ID', licenses: 'Licenses', devices: 'Devices', orders: 'Orders', no_licenses: 'No licenses yet.',
       license_id: 'License ID', personal_code: 'Personal code', holder: 'License holder', status: 'Status', purchased: 'Purchased', activated: 'Activated', device: 'Device',
@@ -23,6 +23,7 @@
       checkout_title: 'Checkout', sandbox_banner: 'SANDBOX PAYMENT — development server. No real money is charged.', pay_sandbox: 'Complete sandbox payment', paid_ok: 'Payment confirmed. Your license and one-time activation code are ready in your account.',
       payments_unavailable: 'Payments are not available on this server yet.', login_to_buy: 'Sign in to purchase.', download: 'Download LiveX for Windows', no_release: 'No installer has been published on this server yet.',
       st_active: 'Active', st_pending_activation: 'Awaiting activation', st_revoked: 'Revoked', st_issued: 'Issued', st_used: 'Used', st_paid: 'Paid', st_pending: 'Pending', st_failed: 'Failed', st_deactivated: 'Removed', st_expired: 'Expired',
+      mb_title: 'Local mailbox (test server)', mb_hint: 'This test server does not send real emails. Every email it would send — verification links, activation codes (KEYNAME), password resets — appears here. Click a link to use it.', mb_filter: 'Filter by email address…', mb_empty: 'No emails yet.', mb_open: 'Open the local mailbox',
       last_seen: 'Last seen', os: 'OS', product: 'Product', amount: 'Amount', date: 'Date', redirecting: 'Redirecting to secure checkout…',
     },
     he: {
@@ -36,7 +37,7 @@
       create_account: 'יצירת חשבון', sign_in: 'התחברות', forgot: 'שכחת סיסמה?', send_reset: 'שליחת קישור לאיפוס', new_password: 'סיסמה חדשה', save_password: 'שמירת סיסמה',
       have_account: 'כבר יש לך חשבון?', no_account: 'עדיין אין חשבון?',
       registered: 'החשבון נוצר. שלחנו קישור אימות לדוא"ל שלך. מזהה המשתמש שלך: ',
-      dev_outbox: ' (שרת פיתוח: ההודעה נשמרה בתיבת היוצא של השרת, SMTP לא הוגדר.)',
+      dev_outbox: ' (שרת בדיקות: לא נשלח מייל אמיתי — הקישור נמצא בתיבת הדואר המקומית למטה.)',
       verifying: 'מאמת…', verified: 'כתובת הדוא"ל אומתה. אפשר להתחבר.', reset_sent: 'אם קיים חשבון עם כתובת זו, נשלח אליה קישור לאיפוס.', reset_done: 'הסיסמה עודכנה. יש להתחבר מחדש.',
       account: 'האזור האישי', profile: 'פרופיל', user_id: 'מזהה משתמש', licenses: 'רישיונות', devices: 'מכשירים', orders: 'הזמנות', no_licenses: 'אין רישיונות עדיין.',
       license_id: 'מזהה רישיון', personal_code: 'קוד אישי', holder: 'בעל הרישיון', status: 'סטטוס', purchased: 'נרכש', activated: 'הופעל', device: 'מכשיר',
@@ -46,6 +47,7 @@
       checkout_title: 'תשלום', sandbox_banner: 'תשלום SANDBOX — שרת פיתוח. לא מתבצע חיוב אמיתי.', pay_sandbox: 'השלמת תשלום Sandbox', paid_ok: 'התשלום אושר. הרישיון וקוד ההפעלה החד-פעמי מחכים באזור האישי.',
       payments_unavailable: 'תשלומים עדיין לא זמינים בשרת זה.', login_to_buy: 'יש להתחבר כדי לרכוש.', download: 'הורדת LiveX ל-Windows', no_release: 'עדיין לא פורסם קובץ התקנה בשרת זה.',
       st_active: 'פעיל', st_pending_activation: 'ממתין להפעלה', st_revoked: 'בוטל', st_issued: 'הונפק', st_used: 'נוצל', st_paid: 'שולם', st_pending: 'ממתין', st_failed: 'נכשל', st_deactivated: 'הוסר', st_expired: 'פג תוקף',
+      mb_title: 'תיבת דואר מקומית (שרת בדיקות)', mb_hint: 'שרת הבדיקות לא שולח מיילים אמיתיים. כל מייל שהיה נשלח — קישורי אימות, קודי הפעלה (KEYNAME) ואיפוס סיסמה — מופיע כאן. לוחצים על הקישור כדי להשתמש בו.', mb_filter: 'סינון לפי כתובת דוא"ל…', mb_empty: 'אין מיילים עדיין.', mb_open: 'פתיחת תיבת הדואר המקומית',
       last_seen: 'נראה לאחרונה', os: 'מערכת הפעלה', product: 'מוצר', amount: 'סכום', date: 'תאריך', redirecting: 'מעביר לתשלום מאובטח…',
     },
   };
@@ -145,6 +147,7 @@
       bindForm('#registerForm', async (v, msg) => {
         const r = await api('POST', '/api/auth/register', v);
         show(msg, 'ok', t('registered') + r.user.userId + (r.verificationEmail === 'queued_dev_outbox' ? t('dev_outbox') : ''));
+        if (r.devMailbox) { const a = document.createElement('a'); a.href = '/mailbox.html'; a.className = 'btn primary'; a.style.marginTop = '10px'; a.textContent = t('mb_open'); msg.append(document.createElement('br'), a); }
         $('#registerForm').reset();
       });
     },
@@ -153,7 +156,11 @@
       const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/account.html';
       if (user) { location.href = safeNext; return; }
       bindForm('#loginForm', async (v) => {
-        const r = await api('POST', '/api/auth/login', { ...v, client: 'web' });
+        let r;
+        try { r = await api('POST', '/api/auth/login', { ...v, client: 'web' }); } catch (e) {
+          if (e.data && e.data.devMailbox) { e.message = `${errText(e)} — ${t('mb_open')}: ${location.origin}/mailbox.html`; e.code = null; }
+          throw e;
+        }
         accessToken = r.accessToken; location.href = safeNext;
       });
     },
@@ -179,6 +186,20 @@
       if (!user) { location.href = `/login.html#next=${encodeURIComponent(`/transfer.html${location.hash}`)}`; return; }
       show(msg, 'info', t('transferring'));
       try { await api('POST', '/api/account/transfer/confirm', { token: hashParam('token') }); show(msg, 'ok', t('transfer_done')); history.replaceState(null, '', location.pathname); } catch (e) { show(msg, 'err', errText(e)); }
+    },
+    async mailbox() {
+      const box = $('#mailbox'); const filter = $('#mbFilter');
+      filter.placeholder = t('mb_filter');
+      const linkify = (txt) => esc(txt).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/(LVX(?:-[A-Z0-9]{4}){5})/g, '<span class="code-box" style="font-size:16px">$1</span>');
+      let all = [];
+      const render = () => {
+        const q = filter.value.trim().toLowerCase();
+        const list = all.filter((m) => !q || m.to.toLowerCase().includes(q));
+        box.innerHTML = list.length ? list.map((m) => `<div class="card"><div class="muted" style="font-size:13px">${esc(fmtDate(Date.parse(m.at)))} · <span class="mono">${esc(m.to)}</span></div><h3 style="margin:6px 0">${esc(m.subject)}</h3><div style="white-space:pre-wrap;direction:ltr;text-align:left;line-height:1.6">${linkify(m.text)}</div></div>`).join('') : `<p class="muted">${t('mb_empty')}</p>`;
+      };
+      try { all = (await api('GET', '/api/dev/mailbox')).messages; } catch (e) { box.innerHTML = `<div class="msg show err">${esc(errText(e))}</div>`; return; }
+      filter.addEventListener('input', render); render();
+      setInterval(async () => { try { all = (await api('GET', '/api/dev/mailbox')).messages; render(); } catch { /* ignore */ } }, 5000);
     },
     async checkout(user) {
       if (!user) { location.href = `/login.html#next=${encodeURIComponent(`/checkout-sandbox.html${location.hash}`)}`; return; }

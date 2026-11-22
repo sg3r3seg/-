@@ -77,3 +77,14 @@ test('static file serving does not expose server code, keys or database', async 
     assert.ok(r.status === 404 || !/codePepper|PRIVATE KEY|"dependencies"|SQLite format/.test(txt), p);
   }
 });
+
+test('local test mailbox: shows emails on a test server, only from this computer', async () => {
+  const r = await call('GET', '/api/dev/mailbox');
+  assert.equal(r.status, 200);
+  assert.ok(Array.isArray(r.body.messages) && r.body.messages.some((m) => m.tag === 'verify'));
+  const reg = await call('POST', '/api/auth/register', { body: { firstName: 'Mail', lastName: 'Box', email: `mb-${Date.now()}@example.com`, password: 'Str0ngPass!1' } });
+  assert.ok(reg.body.devMailbox.endsWith('/mailbox.html'));
+  const login = await call('POST', '/api/auth/login', { body: { email: reg.body.user.email, password: 'Str0ngPass!1' } });
+  assert.equal(login.body.error, 'EMAIL_NOT_VERIFIED');
+  assert.ok(login.body.devMailbox.endsWith('/mailbox.html'));
+});

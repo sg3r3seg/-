@@ -98,7 +98,7 @@ export async function settings(root, app) {
         h('div', { class: 'row' }, btn([h('span', { html: icon('monitor', 14) }), t('manage_devices')], () => app.go('account'), 'sm'),
           btn([h('span', { html: icon('shield', 14) }), t('sign_out_all')], async () => { app.state = await call('session:logout', true); }, 'sm danger')))),
     h('div', { class: 'grid g2' },
-      card(t('hotkeys'), hk ? [field(t('hotkey_highlight'), hl), field(t('hotkey_tts_skip'), skip), h('div', { class: 'muted small' }, `${t('registered')}: ${hk.registered.join(', ') || '—'}`),
+      card(t('hotkeys'), hk ? [field(t('hotkey_highlight'), hl), field(t('hotkey_tts_skip'), skip), h('div', { class: 'muted small' }, `${t('hotkeys_registered')}: ${hk.registered.join(', ') || '—'}`),
         btn(t('save'), (e) => act(e.currentTarget, () => save({ hotkeys: { highlight: hl.value, ttsSkip: skip.value } }), t('saved')), 'sm primary')] : h('p', { class: 'muted' }, t('requires_license')),
       ),
       card(t('advanced'),

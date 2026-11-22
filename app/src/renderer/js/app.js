@@ -102,7 +102,10 @@ function renderAuth(tab = 'login') {
       try { app.state = await call('session:login', v.email, v.password); route(); } catch (err) {
         show('err', errText(err));
         if (err.code === 'EMAIL_NOT_VERIFIED') {
-          msg.append(h('div', {}, h('button', { class: 'btn sm', type: 'button', onclick: (ev) => act(ev.target, () => call('session:resend', v.email, v.password), t('verification_resent')) }, t('resend_verification'))));
+          if (err.data?.devMailbox) msg.append(h('div', { class: 'msg-note' }, t('dev_mailbox_note')));
+          msg.append(h('div', { class: 'row' },
+            err.data?.devMailbox ? h('button', { class: 'btn sm primary', type: 'button', onclick: () => app.openSite('/mailbox.html') }, h('span', { html: icon('external', 14) }), t('open_dev_mailbox')) : null,
+            h('button', { class: 'btn sm', type: 'button', onclick: (ev) => act(ev.target, () => call('session:resend', v.email, v.password), t('verification_resent')) }, t('resend_verification'))));
         }
       } finally { b.disabled = false; }
     };
@@ -119,6 +122,7 @@ function renderAuth(tab = 'login') {
       try {
         const r = await call('session:register', Object.fromEntries(new FormData(form)));
         show('ok', `${t('registered')} ${r.user.userId}${r.verificationEmail === 'queued_dev_outbox' ? ` — ${t('dev_outbox')}` : ''}`);
+        if (r.devMailbox) msg.append(h('div', { class: 'row' }, h('button', { class: 'btn sm primary', type: 'button', onclick: () => app.openSite('/mailbox.html') }, h('span', { html: icon('external', 14) }), t('open_dev_mailbox'))));
         form.reset();
       } catch (err) { show('err', errText(err)); } finally { b.disabled = false; }
     };

@@ -23,7 +23,7 @@ r.post('/register', limiter('register', 10, 3600_000), h(async (req, res) => {
     password: password(b.password),
   };
   const { user, mail } = await auth.register(data, req.ip);
-  res.status(201).json({ user: auth.publicUser(user), verificationEmail: mail.delivered ? 'sent' : 'queued_dev_outbox' });
+  res.status(201).json({ user: auth.publicUser(user), verificationEmail: mail.delivered ? 'sent' : 'queued_dev_outbox', devMailbox: require('../mailer').devMailboxUrl() });
 }));
 
 r.post('/verify-email', limiter('verify', 30, 3600_000), h(async (req, res) => {
@@ -42,7 +42,10 @@ r.post('/login', limiter('login', 20, 15 * 60_000), h(async (req, res) => {
   const b = req.body || {};
   const client = b.client === 'app' ? 'app' : 'web';
   const user = auth.checkCredentials(email(b.email), String(b.password || ''));
-  if (!user.email_verified_at) fail(403, 'EMAIL_NOT_VERIFIED', 'Please verify your email address before signing in.');
+  if (!user.email_verified_at) {
+    const devMailbox = require('../mailer').devMailboxUrl();
+    fail(403, 'EMAIL_NOT_VERIFIED', devMailbox ? 'Please verify your email address before signing in. On this test server emails are not sent — open the local mailbox to find the link.' : 'Please verify your email address before signing in.', devMailbox ? { devMailbox } : undefined);
+  }
   let deviceUid = null;
   if (client === 'app') deviceUid = validateDevice(b.device).uid;
   const s = auth.createSession(user, client, deviceUid);

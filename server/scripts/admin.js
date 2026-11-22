@@ -3,6 +3,7 @@
 //   node scripts/admin.js revoke <LICENSE_ID> [reason]
 //   node scripts/admin.js mark-paid <ORDER_ID>
 //   node scripts/admin.js user <email|LVX-USER-…>
+//   node scripts/admin.js verify <email>           -> marks the account's email as verified (test servers without email)
 //   node scripts/admin.js issue <email> <PRO|TTS|BUNDLE>
 //        -> issues a license + one-time KEYNAME (gift / manual sale)
 //   LIVEX_NEW_PASSWORD=… node scripts/admin.js create-account <email> [first] [last] [PRO|TTS|BUNDLE]
@@ -76,6 +77,13 @@ function createAccount(emailIn, first0, last0) {
     if (!u) return console.log('not found');
     console.log(auth.publicUser(u));
     console.log(L.userLicenses(u.id).map((l) => L.licenseView(l)));
+  } else if (cmd === 'verify' && arg) {
+    const email = String(arg).trim().toLowerCase();
+    const u = db.get().prepare('SELECT * FROM users WHERE email=?').get(email);
+    if (!u) { console.log(`\n  No LiveX account for "${email}". Register first (in LiveX or at http://127.0.0.1:${config.port}/register.html), then run this again.\n`); process.exitCode = 1; return; }
+    db.get().prepare('UPDATE users SET email_verified_at=COALESCE(email_verified_at, ?) WHERE id=?').run(db.now(), u.id);
+    db.audit(u.id, 'email_verified_by_admin');
+    console.log(`\n  Email verified: ${email}  (User ID ${u.public_id}, ${u.first_name} ${u.last_name})\n  You can sign in to LiveX now.\n`);
   } else if (cmd === 'issue' && arg) await issue(arg, rest[0]);
   else if (cmd === 'create-account' && arg) {
     const u = createAccount(arg, rest[0], rest[1]);

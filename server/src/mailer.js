@@ -46,4 +46,8 @@ const wrap = (title, bodyHtml) => `<!doctype html><html><body style="margin:0;ba
 <div style="background:#0b1424;border:1px solid #16314d;border-radius:14px;padding:24px">
 <h2 style="margin-top:0;color:#fff">${title}</h2>${bodyHtml}</div></div></body></html>`;
 
-module.exports = { send, readOutbox, wrap };
+// Test servers without SMTP keep emails in data/outbox; the local mailbox page shows them.
+const devMailboxActive = () => !config.production && !config.smtp.host;
+const devMailboxUrl = () => (devMailboxActive() ? `${config.publicUrl}/mailbox.html` : undefined);
+
+module.exports = { send, readOutbox, wrap, devMailboxActive, devMailboxUrl };

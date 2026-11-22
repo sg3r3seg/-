@@ -303,3 +303,5 @@ details summary { cursor: pointer; margin: 6px 0; }
 .os-url { color: var(--teal); font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
 [dir=rtl] .os-url { text-align: right; }
 .os-go { color: var(--muted); display: grid; }
+
+.msg-note { margin-top: 6px; font-size: 13px; opacity: .95; }
