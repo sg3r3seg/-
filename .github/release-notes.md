@@ -15,6 +15,8 @@
 4. **פתח את LiveX**, התחבר, ובמסך "חשבון ורישיון" הזן את קוד ההפעלה.
    מדריך מלא עם תמונות: **[KEYNAME — איך מזינים את קוד ההפעלה](https://github.com/sg3r3seg/-/blob/claude/livex-windows-app-v8lf9o/KEYNAME.md)**
 
+להנפקת KEYNAME ידנית (מתנה או מכירה ידנית): לחיצה כפולה על `issue-keyname.cmd` בתיקיית השרת.
+
 SHA-256 של הקבצים ב-`SHA256SUMS.txt`.
 
 ### חשוב לדעת

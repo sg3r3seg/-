@@ -160,6 +160,7 @@ function open(file) {
   const dbFile = file || process.env.DB_FILE || path.join(config.dataDir, 'livex.db');
   if (dbFile !== ':memory:') fs.mkdirSync(path.dirname(dbFile), { recursive: true });
   db = new DatabaseSync(dbFile);
+  db.exec('PRAGMA busy_timeout = 5000'); // server and admin CLI may use the DB at the same time
   db.exec(SCHEMA);
   const up = db.prepare(`INSERT INTO products(code,name,price_agorot,currency,entitlements)
     VALUES(?,?,?,'ILS',?) ON CONFLICT(code) DO UPDATE SET name=excluded.name,
