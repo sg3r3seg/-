@@ -3,5 +3,5 @@
   "websiteUrl": "http://127.0.0.1:8787",
   "tokenPublicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAPzw4F71QnfrnNfNKxu/PeFylayayOLcR7W359brlpws=\n-----END PUBLIC KEY-----\n",
   "releasePublicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAXDdbZ1MZagbd8UfwmerJuuB/ysH6D+Z3zW95DOhsCLA=\n-----END PUBLIC KEY-----\n",
-  "officialSiteUrl": "https://livex-official.lovable.app"
+  "officialSiteUrl": "https://livex-app.lovable.app"
 }
