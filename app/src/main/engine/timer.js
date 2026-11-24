@@ -28,6 +28,7 @@ module.exports = (ctx) => {
         s.running = false; s.remainingMs = 0; clearInterval(tick); push();
         ctx.activity({ kind: 'timer', text: `${s.title || 'Timer'} finished` });
         ctx.notify('LiveX Timer', `${s.title || 'Timer'} finished`);
+        ctx.automations?.trigger('timer_end', { title: s.title || 'Timer' });
       } else ctx.send('timer:state', snapshot());
     }, 1000);
   };

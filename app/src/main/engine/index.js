@@ -20,8 +20,10 @@ function createEngine(base) {
   ctx.macros = require('./macros')(ctx);
   ctx.runMacro = (id, src) => ctx.macros.run(id, src).catch(() => {});
   ctx.chat = require('./chat')(ctx);
+  ctx.winners = require('../winners');
+  ctx.automations = require('./automations')(ctx);
 
-  const consumers = [ctx.insights, ctx.alerts, ctx.tts, ctx.chat, ctx.timer, ctx.giveaway, ctx.goals];
+  const consumers = [ctx.insights, ctx.alerts, ctx.tts, ctx.chat, ctx.timer, ctx.giveaway, ctx.goals, ctx.automations];
   hub.on('event', (e) => {
     // Moderation runs first; blocked chat is still counted in analytics but is never
     // read by TTS, shown on the chat overlay, used for commands or giveaway entries.

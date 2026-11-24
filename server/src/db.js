@@ -127,6 +127,48 @@ CREATE TABLE IF NOT EXISTS activation_attempts (
   created_at INTEGER NOT NULL
 );
 
+-- Private chat between a creator and a giveaway winner. The winner proves who they
+-- are by signing in with the platform the giveaway ran on; messages are encrypted at
+-- rest and deleted when the room is closed or expires.
+CREATE TABLE IF NOT EXISTS winner_rooms (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id       TEXT NOT NULL UNIQUE,
+  code          TEXT NOT NULL UNIQUE,
+  user_id       INTEGER NOT NULL REFERENCES users(id),
+  platform      TEXT NOT NULL,
+  winner_id     TEXT,
+  winner_handle TEXT,
+  winner_name   TEXT NOT NULL,
+  title         TEXT NOT NULL,
+  status        TEXT NOT NULL,          -- waiting | verified | closed
+  session_hash  TEXT,
+  verified_name TEXT,
+  host_read_id  INTEGER NOT NULL DEFAULT 0,
+  winner_read_id INTEGER NOT NULL DEFAULT 0,
+  created_at    INTEGER NOT NULL,
+  expires_at    INTEGER NOT NULL,
+  verified_at   INTEGER,
+  closed_at     INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_winner_rooms_user ON winner_rooms(user_id, created_at);
+CREATE TABLE IF NOT EXISTS winner_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id    INTEGER NOT NULL REFERENCES winner_rooms(id) ON DELETE CASCADE,
+  sender     TEXT NOT NULL,            -- host | winner
+  body_enc   TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_winner_messages_room ON winner_messages(room_id, id);
+CREATE TABLE IF NOT EXISTS identity_flows (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id      INTEGER NOT NULL REFERENCES winner_rooms(id) ON DELETE CASCADE,
+  provider     TEXT NOT NULL,
+  state_hash   TEXT NOT NULL UNIQUE,
+  verifier_enc TEXT NOT NULL,
+  status       TEXT NOT NULL,          -- pending | done | error
+  created_at   INTEGER NOT NULL,
+  expires_at   INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS oauth_flows (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   flow_id     TEXT NOT NULL UNIQUE,

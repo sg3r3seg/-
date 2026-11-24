@@ -136,6 +136,7 @@ app.whenReady().then(async () => {
   let lastEnt = '';
   session.on('change', (st) => {
     send('session:changed', st);
+    if (!st.user) require('./winners').closeAllWindows(); // private chats never stay open after sign-out
     const ent = st.entitlements.join(',');
     if (ent !== lastEnt) {
       lastEnt = ent;
@@ -155,7 +156,7 @@ app.whenReady().then(async () => {
     } catch { /* non-fatal */ }
   }
   hardenSession();
-  ipc.register(ctx, { rendererUrl: RENDERER_URL, getWindow: () => win, logs });
+  ipc.register(ctx, { rendererUrl: RENDERER_URL, winnerChatUrl: require('./winners').CHAT_URL, getWindow: () => win, logs });
   createWindow(settings);
   createTray();
   if (settings.get('autoUpdateCheck', true)) setTimeout(() => updater.check().catch(() => {}), 15_000);

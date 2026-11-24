@@ -28,6 +28,7 @@ const PROVIDERS = {
     revoke: 'https://oauth2.googleapis.com/revoke',
     scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
     extraAuth: { access_type: 'offline', prompt: 'consent', include_granted_scopes: 'true' },
+    identity: { scope: 'https://www.googleapis.com/auth/youtube.readonly', extraAuth: { prompt: 'select_account' } },
     parseProfile: (j) => { const c = j.items?.[0]; if (!c) throw new Error('No YouTube channel on this Google account'); return { id: c.id, name: c.snippet?.title, avatar: c.snippet?.thumbnails?.default?.url || null }; },
     revokeReq: (cfg, token) => ({ body: new URLSearchParams({ token }) }),
   },
@@ -39,6 +40,7 @@ const PROVIDERS = {
     revoke: 'https://id.twitch.tv/oauth2/revoke',
     scope: 'user:read:email chat:read chat:edit',
     extraAuth: { force_verify: 'true' },
+    identity: { scope: '', extraAuth: { force_verify: 'true' } },
     profileHeaders: (cfg) => ({ 'Client-Id': cfg.clientId }),
     parseProfile: (j) => { const u = j.data?.[0]; if (!u) throw new Error('Twitch profile not available'); return { id: u.id, name: u.display_name || u.login, login: u.login, avatar: u.profile_image_url || null }; },
     revokeReq: (cfg, token) => ({ body: new URLSearchParams({ client_id: cfg.clientId, token }) }),
@@ -50,6 +52,7 @@ const PROVIDERS = {
     profile: 'https://api.kick.com/public/v1/users',
     revoke: 'https://id.kick.com/oauth/revoke',
     scope: 'user:read channel:read chat:write',
+    identity: { scope: 'user:read' },
     parseProfile: (j) => { const u = j.data?.[0]; if (!u) throw new Error('Kick profile not available'); return { id: String(u.user_id), name: u.name, login: u.name, avatar: u.profile_picture || null }; },
     revokeReq: (cfg, token) => ({ query: { token, token_hint_type: 'access_token' } }),
   },
@@ -60,7 +63,9 @@ const PROVIDERS = {
     profile: 'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name',
     revoke: 'https://open.tiktokapis.com/v2/oauth/revoke/',
     scope: 'user.info.basic',
-    parseProfile: (j) => { const u = j.data?.user; if (!u) throw new Error('TikTok profile not available'); return { id: u.open_id, name: u.display_name, avatar: u.avatar_url || null }; },
+    // TikTok LIVE identifies viewers by their @username, so the winner check needs it.
+    identity: { scope: 'user.info.basic,user.info.profile', profile: 'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,username' },
+    parseProfile: (j) => { const u = j.data?.user; if (!u) throw new Error('TikTok profile not available'); return { id: u.open_id, name: u.display_name, login: u.username || undefined, avatar: u.avatar_url || null }; },
     revokeReq: (cfg, token) => ({ body: new URLSearchParams({ client_key: cfg.clientId, client_secret: cfg.clientSecret, token }) }),
   },
   discord: {
@@ -207,4 +212,4 @@ async function revoke(platform, token) {
 
 setInterval(() => { try { db.get().prepare("DELETE FROM oauth_flows WHERE expires_at < ?").run(db.now() - 3600_000); } catch { /* db closed */ } }, 600_000).unref();
 
-module.exports = { PROVIDERS, providers, configured, start, callback, poll, cancel, refresh, revoke };
+module.exports = { PROVIDERS, providers, configured, start, callback, poll, cancel, refresh, revoke, def, redirectUri, postForm, normalizeTokens, b64url };

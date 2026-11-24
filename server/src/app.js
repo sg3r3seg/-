@@ -43,6 +43,10 @@ function createApp() {
   app.use('/api/updates', require('./routes/updates'));
   app.use('/api/admin', require('./routes/admin'));
   app.use('/api/oauth', require('./routes/oauth'));
+  const winners = require('./routes/winners');
+  app.use('/api/rooms', winners.rooms);
+  app.use('/api/winner', winners.winner);
+  app.get('/w/:code', winners.page);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'NOT_FOUND', message: 'Not found' }));
 
   app.use(express.static(path.join(__dirname, '..', 'web'), { extensions: ['html'] }));

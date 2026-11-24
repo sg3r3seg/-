@@ -47,7 +47,7 @@ function createMock() {
         google: { items: [{ id: 'UC123', snippet: { title: 'Shay Live', thumbnails: { default: { url: 'https://yt3.example/a.jpg' } } } }] },
         twitch: { data: [{ id: '42', login: 'shaylive', display_name: 'ShayLive', profile_image_url: 'https://static-cdn.example/p.png' }] },
         kick: { data: [{ user_id: 7, name: 'shaykick', profile_picture: 'https://kick.example/p.png' }] },
-        tiktok: { data: { user: { open_id: 'tt1', display_name: 'Shay TikTok', avatar_url: 'https://p16.example/a.jpeg' } } },
+        tiktok: { data: { user: { open_id: 'tt1', display_name: 'Shay TikTok', username: 'shay_tt', avatar_url: 'https://p16.example/a.jpeg' } } },
         discord: { id: '99', username: 'shay', global_name: 'Shay', avatar: 'abc' },
       };
       return send(res, 200, shapes[prov]);

@@ -65,14 +65,14 @@ class Twitch extends Connector {
         this.log('info', `joined #${this.cfg.channel}`);
         break;
       case 'PRIVMSG': {
-        const t = m.tags; const user = { id: t['user-id'], name: t['display-name'] || m.prefix.split('!')[0], badges: (t.badges || '').split(',').filter(Boolean).map((b) => b.split('/')[0]), color: t.color };
+        const t = m.tags; const user = { id: t['user-id'], handle: m.prefix.split('!')[0], name: t['display-name'] || m.prefix.split('!')[0], badges: (t.badges || '').split(',').filter(Boolean).map((b) => b.split('/')[0]), color: t.color };
         user.isMod = user.badges.includes('moderator') || user.badges.includes('broadcaster');
         if (t.bits) this.publish({ type: 'bits', user, text: m.trailing, amount: parseInt(t.bits, 10), currency: 'bits' });
         else this.publish({ type: 'chat', user, text: m.trailing });
         break;
       }
       case 'USERNOTICE': {
-        const t = m.tags; const user = { id: t['user-id'], name: t['display-name'] || t.login };
+        const t = m.tags; const user = { id: t['user-id'], handle: t.login, name: t['display-name'] || t.login };
         const id = t['msg-id'];
         if (id === 'sub' || id === 'resub') this.publish({ type: 'sub', user, text: m.trailing || '', count: parseInt(t['msg-param-cumulative-months'] || '1', 10) });
         else if (id === 'subgift' || id === 'submysterygift') this.publish({ type: 'gift', user, gift: 'Gift sub', count: parseInt(t['msg-param-mass-gift-count'] || '1', 10), text: t['system-msg'] || '' });

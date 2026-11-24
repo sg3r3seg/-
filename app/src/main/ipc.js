@@ -18,7 +18,9 @@ const { ROUTES } = require('./overlay-server');
 //  - receives plain JSON arguments and validates them.
 const LEVEL = { public: 0, auth: 1, any: 2, pro: 3, tts: 4 };
 
-function register(ctx, { rendererUrl, getWindow, logs }) {
+const WINNER_CHAT_CHANNELS = new Set(['winner:messages', 'winner:send', 'winner:close', 'winner:info', 'app:copy']);
+
+function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
   const ensure = (level) => {
     if (level === 'public') return;
     const st = session.state;
@@ -31,7 +33,10 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
     if (!(level in LEVEL)) throw new Error(`bad level ${level}`);
     ipcMain.handle(channel, async (event, ...args) => {
       const frame = event.senderFrame;
-      if (!frame || frame !== event.sender.mainFrame || frame.url.split('#')[0] !== rendererUrl) throw coded('FORBIDDEN', 'Untrusted sender');
+      const page = frame && frame === event.sender.mainFrame ? frame.url.split(/[?#]/)[0] : null;
+      // The app page may call everything; the private winner-chat window only its own channels.
+      const trusted = page === rendererUrl || (page === winnerChatUrl && WINNER_CHAT_CHANNELS.has(channel));
+      if (!trusted) throw coded('FORBIDDEN', 'Untrusted sender');
       try {
         ensure(level);
         return { ok: true, data: await fn(...args) };
@@ -111,6 +116,29 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   handle('platforms:forget', 'any', (id) => platforms.forget(s(id, 20)));
   handle('platforms:discordTest', 'pro', async () => { await platforms.connectors.discord.send('✅ LiveX is connected to this channel.'); return true; });
   handle('activity:recent', 'auth', () => hub.activity.slice(0, 100));
+
+  // ---- giveaway winners: private chat ----------------------------------------
+  const winners = require('./winners');
+  const room = (v) => { const r = s(v, 40); if (!/^[\w-]{8,40}$/.test(r)) throw coded('VALIDATION', 'Invalid chat'); return r; };
+  handle('winner:list', 'pro', () => winners.list());
+  handle('winner:create', 'pro', async (key) => {
+    const w = ctx.giveaway.get().winners.find((x) => x.key === s(key, 200));
+    if (!w) throw coded('NOT_FOUND', 'Winner not found');
+    const r = await winners.create(w, ctx.giveaway.get().title);
+    winners.open(r.room.roomId, ctx.settings.get('language'));
+    return r;
+  });
+  handle('winner:open', 'pro', (id) => winners.open(room(id), ctx.settings.get('language')));
+  handle('winner:info', 'pro', async (id) => (await winners.list()).find((x) => x.roomId === room(id)) || null);
+  handle('winner:messages', 'pro', (id, after) => winners.messages(room(id), Number(after) || 0));
+  handle('winner:send', 'pro', (id, text) => winners.send(room(id), s(text, 1000)));
+  handle('winner:close', 'pro', (id) => winners.close(room(id)));
+
+  // ---- built-in automations (locked: on/off only) ----------------------------
+  handle('automations:list', 'auth', () => ctx.automations.list());
+  handle('automations:setEnabled', 'pro', (id, on) => ctx.automations.setEnabled(s(id, 40), !!on));
+  handle('automations:preview', 'pro', (id) => ctx.automations.preview(s(id, 40)));
+  handle('automations:remove', 'pro', () => ctx.automations.remove());
 
   // ---- social accounts (official OAuth) --------------------------------------
   const social = require('./social');

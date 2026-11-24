@@ -1,6 +1,8 @@
 'use strict';
 const express = require('express');
 const O = require('../services/oauth');
+const W = require('../services/winners');
+const { identityRedirect } = require('./winners');
 const { h, str } = require('../http');
 const { requireAuth, requireVerified, requireApp } = require('../middleware');
 const { limiter } = require('../ratelimit');
@@ -10,6 +12,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 // Public: the provider redirects the user's browser here after consent.
 r.get('/callback/:platform', limiter('oauth-cb', 60, 60_000), h(async (req, res) => {
+  // Giveaway-winner identity checks share the registered redirect URI.
+  if (W.ownsState(req.query.state)) return identityRedirect(String(req.params.platform), req.query, res);
   const out = await O.callback(String(req.params.platform), req.query);
   const ok = out.ok;
   const msgs = {

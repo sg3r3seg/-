@@ -52,7 +52,7 @@ class Kick extends Connector {
         case 'App\\Events\\ChatMessageEvent': {
           const s = data.sender || {};
           const badges = (s.identity?.badges || []).map((b) => b.type);
-          this.publish({ type: 'chat', user: { id: String(s.id), name: s.username, badges, isMod: badges.includes('moderator') || badges.includes('broadcaster'), color: s.identity?.color }, text: String(data.content || '').replace(/\[emote:\d+:([^\]]+)\]/g, ':$1:') });
+          this.publish({ type: 'chat', user: { id: String(s.id), handle: s.slug || s.username, name: s.username, badges, isMod: badges.includes('moderator') || badges.includes('broadcaster'), color: s.identity?.color }, text: String(data.content || '').replace(/\[emote:\d+:([^\]]+)\]/g, ':$1:') });
           break;
         }
         case 'App\\Events\\SubscriptionEvent': this.publish({ type: 'sub', user: { name: data.username }, count: data.months }); break;

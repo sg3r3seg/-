@@ -14,6 +14,19 @@ const app = {
 };
 window.__livex = app; // for debugging in dev tools only
 
+// Private winner chats: unread counter on the side menu (a number only, never message text).
+setInterval(async () => {
+  if (!app.has('pro')) return;
+  const el = document.querySelector('.nav-item[data-view="winners"]');
+  if (!el) return;
+  const r = await window.livex.invoke('winner:list').catch(() => null);
+  const n = r?.ok ? r.data.filter((x) => x.status !== 'closed').reduce((a, x) => a + x.unread, 0) : 0;
+  let b = el.querySelector('.nav-count');
+  if (!n) { b?.remove(); return; }
+  if (!b) { b = document.createElement('span'); b.className = 'nav-count'; el.append(b); }
+  b.textContent = n > 99 ? '99+' : String(n);
+}, 15_000);
+
 // Social sign-in: while a platform's sign-in is pending, ask the main process to check
 // it every 1.5 s (whichever screen is open). Stops by itself when the sign-in ends.
 const socialPolls = new Map();

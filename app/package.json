@@ -12,7 +12,8 @@
     "test": "node --test test/*.test.js",
     "icons": "node scripts/make-icons.js",
     "dist:win": "node scripts/build-installer.js",
-    "test:e2e-oauth": "node test/e2e/oauth.e2e.js"
+    "test:e2e-oauth": "node test/e2e/oauth.e2e.js",
+    "test:e2e-winners": "node test/e2e/winners.e2e.js"
   },
   "dependencies": {
     "ws": "^8.23.0"

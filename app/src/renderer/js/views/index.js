@@ -2,6 +2,8 @@ import dashboard from './dashboard.js';
 import account from './account.js';
 import connections from './connections.js';
 import social from './social.js';
+import automations from './automations.js';
+import winners from './winners.js';
 import { tts, voiceStudio } from './tts.js';
 import { alerts, chatbot, commands } from './live.js';
 import { soundboard, macro, remote } from './control.js';
@@ -23,10 +25,12 @@ export const VIEWS = [
   { id: 'commands', group: 'live', icon: 'terminal', title: 'nav_commands', ent: 'pro', render: commands },
   { id: 'soundboard', group: 'live', icon: 'music', title: 'nav_soundboard', ent: 'pro', render: soundboard },
   { id: 'macro', group: 'live', icon: 'zap', title: 'nav_macro', ent: 'pro', render: macro },
+  { id: 'automations', group: 'live', icon: 'auto', title: 'nav_automations', ent: 'pro', render: automations },
   { id: 'remote', group: 'live', icon: 'phone', title: 'nav_remote', ent: 'pro', render: remote },
   { id: 'timer', group: 'engage', icon: 'timer', title: 'nav_timer', ent: 'pro', render: timer },
   { id: 'challenges', group: 'engage', icon: 'trophy', title: 'nav_challenges', ent: 'pro', render: challenges },
   { id: 'giveaway', group: 'engage', icon: 'gift', title: 'nav_giveaway', ent: 'pro', render: giveaway },
+  { id: 'winners', group: 'engage', icon: 'chat', title: 'nav_winners', ent: 'pro', render: winners },
   { id: 'overlay-editor', group: 'overlays', icon: 'palette', title: 'nav_overlay_editor', ent: 'pro', render: overlayEditor },
   { id: 'overlay-center', group: 'overlays', icon: 'layers', title: 'nav_overlay_center', ent: null, render: overlayCenter },
   { id: 'schedule', group: 'grow', icon: 'calendar', title: 'nav_schedule', ent: 'pro', render: schedule },

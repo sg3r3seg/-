@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>LiveX — Private chat</title><link rel="icon" href="/img/icon.svg"><link rel="stylesheet" href="/css/site.css"><script src="/js/winner.js" defer></script></head>
+<body class="winner-page">
+<header class="top"><a class="brand" href="/index.html"><span class="logo">X</span>LIVEX</a>
+<nav class="links"><button class="lang" id="langBtn">English</button></nav></header>
+<main class="wrap">
+  <div class="card win-card" id="card">
+    <div class="win-loading" id="loading"><span class="spin"></span></div>
+    <!-- step 1: confirm identity -->
+    <section id="claim" class="hidden">
+      <div class="win-emoji">🎉</div>
+      <h2 id="claimTitle"></h2>
+      <p class="muted" id="claimText"></p>
+      <div class="msg" id="claimMsg"></div>
+      <p><button class="btn primary u-w100" id="verifyBtn"></button></p>
+      <ul class="win-points">
+        <li id="pPrivate"></li>
+        <li id="pCheck"></li>
+        <li id="pNoPass"></li>
+      </ul>
+    </section>
+    <!-- step 2: chat -->
+    <section id="chat" class="hidden">
+      <div class="win-head"><div><div class="win-title" id="chatTitle"></div><div class="muted u-fs13" id="chatSub"></div></div><span class="win-lock" id="lockBadge"></span></div>
+      <div class="win-msgs" id="msgs" aria-live="polite"></div>
+      <form class="win-form" id="form"><input id="text" maxlength="1000" autocomplete="off"><button class="btn primary" id="sendBtn" type="submit"></button></form>
+      <div class="msg" id="chatMsg"></div>
+    </section>
+    <!-- other states -->
+    <section id="state" class="hidden"><div class="win-emoji" id="stateIcon"></div><h2 id="stateTitle"></h2><p class="muted" id="stateText"></p></section>
+  </div>
+</main>
+<footer>© LiveX — ONE PLATFORM. EVERY CREATOR.</footer>
+</body></html>

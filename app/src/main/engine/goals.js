@@ -37,7 +37,10 @@ module.exports = (ctx) => {
     onEvent(e) {
       if (e.test || !ctx.session.has('pro')) return;
       const ga = amountFor(goal.metric, e);
-      if (ga) { goal.current += ga; pushGoal(); }
+      if (ga) {
+        const before = goal.current; goal.current += ga; pushGoal();
+        if (before < goal.target && goal.current >= goal.target) ctx.automations?.trigger('goal_reached', { title: goal.title, event: e });
+      }
       let changed = false;
       for (const c of challenges) {
         if (!c.active || c.completedAt) continue;
@@ -48,6 +51,7 @@ module.exports = (ctx) => {
           c.completedAt = Date.now();
           ctx.alerts.showText(`🏆 ${c.title}${c.reward ? ` — ${c.reward}` : ''}`, 8000);
           ctx.activity({ kind: 'challenge', text: `Challenge completed: ${c.title}` });
+          ctx.automations?.trigger('challenge_done', { title: c.title });
         }
       }
       if (changed) pushCh();

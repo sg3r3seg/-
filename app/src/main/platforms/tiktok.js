@@ -29,7 +29,7 @@ class TikTok extends Connector {
   }
   map(m) {
     const d = m.data || {};
-    const user = { id: d.userId || d.uniqueId, name: d.nickname || d.uniqueId, avatar: d.profilePictureUrl, isMod: !!d.isModerator, badges: [d.isModerator && 'moderator', d.isSubscriber && 'subscriber'].filter(Boolean) };
+    const user = { id: d.userId || d.uniqueId, handle: d.uniqueId, name: d.nickname || d.uniqueId, avatar: d.profilePictureUrl, isMod: !!d.isModerator, badges: [d.isModerator && 'moderator', d.isSubscriber && 'subscriber'].filter(Boolean) };
     switch (m.event) {
       case 'chat': this.publish({ type: 'chat', user, text: d.comment }); break;
       case 'gift':

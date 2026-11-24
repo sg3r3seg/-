@@ -9,7 +9,7 @@ module.exports = (ctx) => {
   const keys = new Set(g.entries.map((x) => x.key));
   const push = () => {
     ctx.store.set('giveaway', g);
-    const pub = { title: g.title, keyword: g.keyword, open: g.open, count: g.entries.length, winners: g.winners.slice(-5), recent: g.entries.slice(-8).map((x) => x.name) };
+    const pub = { title: g.title, keyword: g.keyword, open: g.open, count: g.entries.length, winners: g.winners.slice(-5).map((w) => ({ name: w.name, platform: w.platform })), recent: g.entries.slice(-8).map((x) => x.name) };
     ctx.overlay.broadcast('giveaway', 'state', pub, { sticky: true });
     ctx.send('giveaway:state', { ...g, entries: g.entries.slice(-500), total: g.entries.length });
     return { ...g, total: g.entries.length };
@@ -28,7 +28,9 @@ module.exports = (ctx) => {
       g.winners.push(win);
       ctx.overlay.broadcast('giveaway', 'winner', { name: w.name, platform: w.platform, title: g.title });
       ctx.activity({ kind: 'giveaway', text: `Winner: ${w.name} (${w.platform})` });
-      push(); return win;
+      push();
+      ctx.automations?.trigger('giveaway_winner', { winner: win, title: g.title });
+      return win;
     },
     onEvent(e) {
       if (!g.open || e.type !== 'chat' || e.test || e.blocked || !ctx.session.has('pro')) return;
@@ -37,7 +39,8 @@ module.exports = (ctx) => {
       const key = userKey(e);
       if (keys.has(key)) return;
       keys.add(key);
-      g.entries.push({ key, name: e.user?.name || 'unknown', platform: e.platform, at: Date.now() });
+      // userId / @handle let LiveX verify the winner later (private chat sign-in).
+      g.entries.push({ key, name: e.user?.name || 'unknown', platform: e.platform, userId: e.user?.id ? String(e.user.id) : undefined, handle: e.user?.handle || undefined, at: Date.now() });
       if (g.entries.length > 20000) g.entries.shift();
       push();
     },

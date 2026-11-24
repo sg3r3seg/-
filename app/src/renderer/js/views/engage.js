@@ -80,7 +80,10 @@ export async function giveaway(root) {
     g = x;
     stateEl.replaceChildren(h('div', { class: 'row' }, badge(g.open ? t('giveaway_open') : t('giveaway_closed'), g.open ? 'ok' : ''), h('span', { class: 'big-num' }, g.total), h('span', { class: 'muted' }, t('entries'))));
     entriesEl.replaceChildren(...(g.entries.length ? g.entries.slice(-200).reverse().map((e) => h('span', { class: 'entry' }, h('span', { class: `pf-dot pf-${e.platform}` }), e.name)) : [empty(t('no_entries'))]));
-    winnersEl.replaceChildren(...g.winners.slice().reverse().map((x) => h('div', { class: 'winner-row' }, h('span', { html: icon('trophy', 16) }), h('b', {}, x.name), h('span', { class: 'muted small' }, `${x.platform} · ${fmtTime(x.at)}`))));
+    // Private chat needs the winner's platform account id / @handle (from the live chat).
+    const canChat = (x) => (x.platform === 'tiktok' ? !!x.handle : x.platform === 'youtube' ? !!x.userId : ['twitch', 'kick'].includes(x.platform) && !!(x.userId || x.handle));
+    winnersEl.replaceChildren(...g.winners.slice().reverse().map((x) => h('div', { class: 'winner-row' }, h('span', { html: icon('trophy', 16) }), h('b', {}, h('bdi', {}, x.name)), h('span', { class: 'muted small grow' }, `${x.platform} · ${fmtTime(x.at)}`),
+      h('button', { class: 'btn sm', disabled: !canChat(x), title: canChat(x) ? t('wc_start_hint') : t('wc_no_identity'), onclick: (e) => act(e.currentTarget, () => call('winner:create', x.key)) }, h('span', { html: icon('chat', 14) }), t('wc_private_chat')))));
   };
   show(g);
   const items = textarea({ value: w.items.join('\n'), rows: 6 });
