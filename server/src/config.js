@@ -55,6 +55,21 @@ const config = {
 
   adminToken: env('ADMIN_TOKEN', ''),
 
+  // Official OAuth apps for connecting creators' platform accounts. Client secrets
+  // live only here (server side); the desktop app never sees them.
+  oauth: Object.fromEntries(['google', 'twitch', 'kick', 'tiktok', 'discord'].map((p) => {
+    const P = p.toUpperCase();
+    return [p, {
+      clientId: env(`OAUTH_${P}_CLIENT_ID`, ''),
+      clientSecret: env(`OAUTH_${P}_CLIENT_SECRET`, ''),
+      // Endpoint overrides exist for automated tests only and are ignored in production.
+      authorizeUrl: env(`OAUTH_${P}_AUTHORIZE_URL`, ''),
+      tokenUrl: env(`OAUTH_${P}_TOKEN_URL`, ''),
+      profileUrl: env(`OAUTH_${P}_PROFILE_URL`, ''),
+      revokeUrl: env(`OAUTH_${P}_REVOKE_URL`, ''),
+    }];
+  })),
+
   ai: {
     elevenLabsKey: env('ELEVENLABS_API_KEY', ''),
     elevenLabsModel: env('ELEVENLABS_MODEL', 'eleven_multilingual_v2'),

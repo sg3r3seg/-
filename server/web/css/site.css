@@ -66,3 +66,9 @@ footer { color: var(--muted); text-align: center; padding: 40px 0; font-size: 13
 .hidden { display: none !important; }
 @media (max-width: 560px) { .row2 { grid-template-columns: 1fr; } .kv { grid-template-columns: 1fr; } .kv dt { margin-top: 6px; } }
 html[dir=rtl] .mono { text-align: right; }
+
+/* Utility classes (the site's CSP blocks inline style attributes) */
+.u-fs11 { font-size: 11px; } .u-fs12 { font-size: 12px; } .u-fs13 { font-size: 13px; } .u-fs16 { font-size: 16px; }
+.u-mt0 { margin-top: 0; } .u-mt6 { margin-top: 6px; } .u-mt22 { margin-top: 22px; } .u-my6 { margin: 6px 0; }
+.u-mw520 { max-width: 520px; } .u-scrollx { overflow-x: auto; } .u-w100 { width: 100%; }
+.u-pre { white-space: pre-wrap; direction: ltr; text-align: left; line-height: 1.6; }

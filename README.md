@@ -88,15 +88,39 @@ Dashboard · חשבון ורישיון · חיבורים · LiveX TTS · Voice S
 
 Overlays מקומיים ל-OBS (‏`127.0.0.1:4777`, עם מפתח לכל התקנה ובדיקת Origin): ‏`/alerts` ‏`/chat` ‏`/tts` ‏`/wheel` ‏`/follower-goal` ‏`/timer` ‏`/giveaway`. כל כתובת נבדקת בטעינה אמיתית לפני שאפשר להעתיק אותה. לא מוצגת כתובת ציבורית.
 
-## חיבורי פלטפורמות — מצב אמיתי
+## חשבונות רשתות (Social Accounts) — התחברות רשמית (OAuth)
+
+במסך **חשבונות רשתות** המשתמש לוחץ **Connect** → נפתח דף ההתחברות הרשמי של הפלטפורמה **בדפדפן של המשתמש** → בוחר חשבון ומאשר הרשאות → חוזר ל-LiveX והחשבון מוצג כ-**מחובר** (תמונת פרופיל, שם משתמש, פלטפורמה, סטטוס, תאריך חיבור אחרון, כפתורי Disconnect / Reconnect).
+
+איך זה מאובטח:
+- **LiveX לא רואה ולא שומרת סיסמאות** — ההתחברות קורית באתר של הפלטפורמה.
+- ה-**Client Secret** של כל פלטפורמה נשמר **רק בשרת LiveX** (משתני `OAUTH_*`), אף פעם לא באפליקציה.
+- הבקשה מוגנת ב-`state` חד-פעמי (מגובב בשרת) ו-**PKCE** (‏YouTube/Google, Kick); קישור התחברות שכבר נוצל או שפג תוקפו (10 דקות) נדחה.
+- הטוקנים נמסרים לאפליקציה **פעם אחת** ונמחקים מהשרת; באפליקציה הם נשמרים **מוצפנים** (Windows DPAPI דרך safeStorage), בנפרד לכל משתמש LiveX. הם לא מגיעים לממשק, ולא נכתבים ללוגים.
+- **Refresh Tokens**: טוקן שפג תוקפו מחודש אוטומטית דרך השרת. אם הפלטפורמה ביטלה את ההרשאה → הסטטוס הופך ל"נדרש חיבור מחדש".
+- **Disconnect** מבטל את ההרשאה גם אצל הפלטפורמה (revoke) ומוחק את הטוקנים מהמחשב.
+
+הגדרה בשרת (פעם אחת לכל פלטפורמה): רושמים אפליקציה בפורטל המפתחים, מגדירים Redirect URI ‏`https://<השרת>/api/oauth/callback/<platform>` וממלאים ב-`.env`:
+
+| פלטפורמה | פורטל מפתחים | Redirect URI | משתנים | מה החיבור נותן |
+|---|---|---|---|---|
+| YouTube | Google Cloud Console → OAuth client (Web) + YouTube Data API v3 | `/api/oauth/callback/youtube` | `OAUTH_GOOGLE_CLIENT_ID/SECRET` | צ׳אט, Super Chat וחברויות של השידור שלך, **ושליחת הודעות בצ׳אט** — בלי מפתח API |
+| Twitch | dev.twitch.tv → Applications | `/api/oauth/callback/twitch` | `OAUTH_TWITCH_CLIENT_ID/SECRET` | קריאה וכתיבה בצ׳אט (הבוט עונה) — בלי להעתיק טוקן |
+| Kick | kick.com → Settings → Developer | `/api/oauth/callback/kick` | `OAUTH_KICK_CLIENT_ID/SECRET` | שליחת הודעות דרך ה-API הרשמי; פרופיל |
+| TikTok | developers.tiktok.com → Login Kit | `/api/oauth/callback/tiktok` | `OAUTH_TIKTOK_CLIENT_ID/SECRET` | קישור פרופיל (שם ותמונה). אירועי LIVE: אין להם API ציבורי — עדיין דרך ספק (מסך חיבורים) |
+| Discord | discord.com/developers → OAuth2 | `/api/oauth/callback/discord` | `OAUTH_DISCORD_CLIENT_ID/SECRET` | Webhook לערוץ שבחרת (הודעת "עליתי לשידור", לוח שידורים) |
+
+פלטפורמה שלא הוגדרה בשרת מוצגת במסך כ"ההתחברות עוד לא הוגדרה בשרת" — בלי הצלחה מזויפת. מסך **חיבורים** הישן נשאר כחלופה ידנית (מפתח API / שם ערוץ), ושדותיו הופכים לאופציונליים כשהחשבון מחובר.
+
+### מצב החיבורים לשידור
 
 | פלטפורמה | חיבור | מה צריך |
 |---|---|---|
-| Twitch | IRC רשמי על WebSocket. קריאה ללא התחברות; כתיבה עם OAuth token של הבוט | שם ערוץ |
-| YouTube LIVE | YouTube Data API v3 רשמי — צ׳אט, Super Chat, חברויות, צופים | מפתח API של המשתמש |
+| Twitch | IRC רשמי על WebSocket. קריאה ללא התחברות; כתיבה עם התחברות רשמית (או OAuth token ידני) | התחברות / שם ערוץ |
+| YouTube LIVE | YouTube Data API v3 רשמי — צ׳אט, Super Chat, חברויות, צופים | התחברות עם Google, או מפתח API |
 | TikTok LIVE | אין API ציבורי רשמי לאירועי LIVE → חיבור לספק אינטגרציה ב-WebSocket (למשל Event API המקומי של TikFinity, ‏`ws://127.0.0.1:21213/`) | ספק פועל |
-| Kick | ה-API הרשמי דורש אפליקציית מפתחים + Webhooks לשרת ציבורי. עד אז: פיד הצ׳אט הציבורי של הערוץ — **מסומן "מחבר לא רשמי"** | שם ערוץ / מזהה חדר |
-| Discord | Webhook רשמי להודעות (עלייה לשידור, לוח שידורים) | כתובת Webhook |
+| Kick | כתיבה: API רשמי (עם התחברות). קריאת צ׳אט: פיד הצ׳אט הציבורי של הערוץ — **מסומן "מחבר לא רשמי"** (ה-API הרשמי לקריאה דורש Webhooks לשרת ציבורי) | התחברות / שם ערוץ |
+| Discord | Webhook רשמי להודעות | התחברות, או כתובת Webhook |
 
 אין נתונים מומצאים: צופים/מתנות/עוקבים מוצגים רק אם הפלטפורמה סיפקה אותם; התראות בדיקה מסומנות TEST ואינן נספרות באנליטיקה.
 
@@ -107,8 +131,9 @@ Overlays מקומיים ל-OBS (‏`127.0.0.1:4777`, עם מפתח לכל התק
 ## בדיקות
 
 ```bash
-cd server && npm test   # 15 בדיקות: כל 12 תרחישי החובה + brute force, תפוגה, idempotency, אחסון hash, rotation, איפוס סיסמה, הרשאת TTS
-cd app && npm test      # 16 בדיקות: אימות Lease/חתימות (שרת מזויף, שינוי payload, תפוגה, מכשיר אחר), מניפסט עדכון, סינון TTS, הרשאות, הגרלה, Overlay server
+cd server && npm test   # 37 בדיקות: 12 תרחישי החובה, brute force, תפוגה, idempotency, rotation, איפוס סיסמה, הרשאת TTS, ו-OAuth (state, PKCE, ביטול, כשל, קישור משומש, refresh, revoke)
+cd app && npm test      # 27 בדיקות: Lease/חתימות, מניפסט עדכון, סינון TTS, הרשאות, Overlay, מנוע
+cd app && xvfb-run -a npm run test:e2e-oauth   # 31 בדיקות קצה-לקצה של חשבונות רשתות באפליקציה האמיתית מול ספק OAuth מדומה
 ```
 
 תרחיש 12 (כשל שרת): האפליקציה לעולם לא מציגה הצלחה — כל קריאה שנכשלה נדחית, משתמש חדש ללא Lease נחסם, ו-Lease לא חתום/מזויף נדחה.

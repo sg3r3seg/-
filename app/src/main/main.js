@@ -144,6 +144,7 @@ app.whenReady().then(async () => {
     }
   });
   platforms.on('status', (s) => send('platform:status', s));
+  require('./social').on('change', (v) => send('social:changed', v));
   updater.listeners.add((s) => send('update:state', s));
 
   // Windows toast notifications need a Start-menu shortcut carrying our AppUserModelID.

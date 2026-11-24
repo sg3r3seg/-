@@ -42,6 +42,7 @@ function createApp() {
   app.use('/api/tts', require('./routes/tts'));
   app.use('/api/updates', require('./routes/updates'));
   app.use('/api/admin', require('./routes/admin'));
+  app.use('/api/oauth', require('./routes/oauth'));
   app.use('/api', (_req, res) => res.status(404).json({ error: 'NOT_FOUND', message: 'Not found' }));
 
   app.use(express.static(path.join(__dirname, '..', 'web'), { extensions: ['html'] }));

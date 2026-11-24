@@ -190,12 +190,12 @@
     async mailbox() {
       const box = $('#mailbox'); const filter = $('#mbFilter');
       filter.placeholder = t('mb_filter');
-      const linkify = (txt) => esc(txt).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/(LVX(?:-[A-Z0-9]{4}){5})/g, '<span class="code-box" style="font-size:16px">$1</span>');
+      const linkify = (txt) => esc(txt).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/(LVX(?:-[A-Z0-9]{4}){5})/g, '<span class="code-box u-fs16">$1</span>');
       let all = [];
       const render = () => {
         const q = filter.value.trim().toLowerCase();
         const list = all.filter((m) => !q || m.to.toLowerCase().includes(q));
-        box.innerHTML = list.length ? list.map((m) => `<div class="card"><div class="muted" style="font-size:13px">${esc(fmtDate(Date.parse(m.at)))} · <span class="mono">${esc(m.to)}</span></div><h3 style="margin:6px 0">${esc(m.subject)}</h3><div style="white-space:pre-wrap;direction:ltr;text-align:left;line-height:1.6">${linkify(m.text)}</div></div>`).join('') : `<p class="muted">${t('mb_empty')}</p>`;
+        box.innerHTML = list.length ? list.map((m) => `<div class="card"><div class="muted u-fs13">${esc(fmtDate(Date.parse(m.at)))} · <span class="mono">${esc(m.to)}</span></div><h3 class="u-my6">${esc(m.subject)}</h3><div class="u-pre">${linkify(m.text)}</div></div>`).join('') : `<p class="muted">${t('mb_empty')}</p>`;
       };
       try { all = (await api('GET', '/api/dev/mailbox')).messages; } catch (e) { box.innerHTML = `<div class="msg show err">${esc(errText(e))}</div>`; return; }
       filter.addEventListener('input', render); render();
@@ -225,16 +225,16 @@
     $('#licenses').innerHTML = a.licenses.length ? a.licenses.map((l) => {
       const ac = l.activationCode;
       let codeHtml = '';
-      if (ac && ac.code) codeHtml = `<p class="muted">${t('activation_code')}</p><div class="code-box">${esc(ac.code)}</div><p class="muted" style="font-size:12px">⏳ ${fmtDate(ac.expiresAt)}</p>`;
+      if (ac && ac.code) codeHtml = `<p class="muted">${t('activation_code')}</p><div class="code-box">${esc(ac.code)}</div><p class="muted u-fs12">⏳ ${fmtDate(ac.expiresAt)}</p>`;
       else if (ac && ac.status === 'used') codeHtml = `<p class="muted">✓ ${t('code_used')} — ${fmtDate(ac.usedAt)}</p>`;
       else if (ac && ac.status === 'expired') codeHtml = `<p class="msg show err">${t('code_expired')}</p>`;
-      return `<div class="card"><h3 style="margin-top:0">${esc(l.product === 'BUNDLE' ? 'LiveX COMPLETE BUNDLE' : `LiveX ${l.product}`)} <span class="badge ${esc(l.status)}">${esc(st(l.status))}</span></h3>
+      return `<div class="card"><h3 class="u-mt0">${esc(l.product === 'BUNDLE' ? 'LiveX COMPLETE BUNDLE' : `LiveX ${l.product}`)} <span class="badge ${esc(l.status)}">${esc(st(l.status))}</span></h3>
         <dl class="kv"><dt>${t('holder')}</dt><dd>${esc(l.holderName)}</dd><dt>${t('user_id')}</dt><dd class="mono">${esc(l.userId)}</dd><dt>${t('email')}</dt><dd>${esc(l.email)}</dd>
         <dt>${t('license_id')}</dt><dd class="mono">${esc(l.licenseId)}</dd><dt>${t('personal_code')}</dt><dd class="mono">${esc(l.personalCode)}</dd>
         <dt>${t('purchased')}</dt><dd>${fmtDate(l.purchasedAt)}</dd><dt>${t('activated')}</dt><dd>${fmtDate(l.activatedAt)}</dd>
         <dt>${t('device')}</dt><dd>${l.device ? `${esc(l.device.name)} <span class="mono muted">${esc(l.device.deviceId)}</span>` : '—'}</dd></dl>${codeHtml}</div>`;
     }).join('') : `<p class="muted">${t('no_licenses')} <a href="/index.html#pricing">${t('pricing')}</a></p>`;
-    $('#devices').innerHTML = a.devices.length ? `<table><tr><th>${t('device')}</th><th>${t('os')}</th><th>${t('license_id')}</th><th>${t('activated')}</th><th>${t('last_seen')}</th><th>${t('status')}</th><th></th></tr>${a.devices.map((d) => `<tr><td>${esc(d.name)}<div class="mono muted" style="font-size:11px">${esc(d.deviceId)}</div></td><td>${esc(d.os)}</td><td class="mono">${esc(d.licenseId)}</td><td>${fmtDate(d.activatedAt)}</td><td>${fmtDate(d.lastSeenAt)}</td><td><span class="badge ${esc(d.status)}">${esc(st(d.status))}</span></td><td>${d.status === 'active' ? `<button class="btn danger" data-transfer="${esc(d.deviceId)}">${t('transfer')}</button>` : ''}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
+    $('#devices').innerHTML = a.devices.length ? `<table><tr><th>${t('device')}</th><th>${t('os')}</th><th>${t('license_id')}</th><th>${t('activated')}</th><th>${t('last_seen')}</th><th>${t('status')}</th><th></th></tr>${a.devices.map((d) => `<tr><td>${esc(d.name)}<div class="mono muted u-fs11">${esc(d.deviceId)}</div></td><td>${esc(d.os)}</td><td class="mono">${esc(d.licenseId)}</td><td>${fmtDate(d.activatedAt)}</td><td>${fmtDate(d.lastSeenAt)}</td><td><span class="badge ${esc(d.status)}">${esc(st(d.status))}</span></td><td>${d.status === 'active' ? `<button class="btn danger" data-transfer="${esc(d.deviceId)}">${t('transfer')}</button>` : ''}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
     $('#orders').innerHTML = a.orders.length ? `<table><tr><th>Order</th><th>${t('product')}</th><th>${t('amount')}</th><th>${t('status')}</th><th>${t('date')}</th></tr>${a.orders.map((o) => `<tr><td class="mono">${esc(o.id)}</td><td>${esc(o.product_code)}</td><td>₪${(o.amount_agorot / 100).toFixed(2)}</td><td><span class="badge ${esc(o.status)}">${esc(st(o.status))}</span></td><td>${fmtDate(o.created_at)}</td></tr>`).join('')}</table>` : '<p class="muted">—</p>';
     document.querySelectorAll('[data-transfer]').forEach((b) => b.addEventListener('click', async () => {
       const pw = window.prompt(t('transfer_prompt'));

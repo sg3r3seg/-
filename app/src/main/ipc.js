@@ -112,6 +112,16 @@ function register(ctx, { rendererUrl, getWindow, logs }) {
   handle('platforms:discordTest', 'pro', async () => { await platforms.connectors.discord.send('✅ LiveX is connected to this channel.'); return true; });
   handle('activity:recent', 'auth', () => hub.activity.slice(0, 100));
 
+  // ---- social accounts (official OAuth) --------------------------------------
+  const social = require('./social');
+  const plat = (p) => { const v = s(p, 20); if (!social.PLATFORMS.includes(v)) throw coded('VALIDATION', 'Unknown platform'); return v; };
+  handle('social:list', 'auth', () => social.list());
+  handle('social:connect', 'auth', (p) => social.connect(plat(p)));
+  handle('social:reconnect', 'auth', async (p) => { const v = plat(p); if (social.stored(v)) await social.disconnect(v); return social.connect(v); });
+  handle('social:cancel', 'auth', (p) => social.cancel(plat(p)));
+  handle('social:poll', 'auth', (p) => social.poll(plat(p)));
+  handle('social:disconnect', 'auth', async (p) => { const v = plat(p); const r = await social.disconnect(v); if (platforms.connectors[v]?.status.state !== 'disconnected' && ['twitch', 'youtube', 'kick'].includes(v)) platforms.disconnect(v); return r; });
+
   // ---- overlays ---------------------------------------------------------------------
   handle('overlay:setEnabled', 'any', (route, enabled) => {
     if (!ROUTES.includes(route)) throw coded('VALIDATION', 'Unknown overlay');

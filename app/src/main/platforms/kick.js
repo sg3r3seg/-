@@ -18,7 +18,8 @@ class Kick extends Connector {
     return { chatroomId: j.chatroom?.id, channelId: j.id, live: !!j.livestream, viewers: j.livestream?.viewer_count ?? null };
   }
 
-  async connect({ channel, chatroomId }) {
+  async connect({ channel, chatroomId, getToken, broadcasterId }) {
+    this.auth = getToken ? { getToken, broadcasterId } : null;
     const slug = String(channel || '').trim().toLowerCase();
     if (!/^[a-z0-9_-]{2,40}$/.test(slug)) throw Object.assign(new Error('Invalid Kick channel name'), { code: 'VALIDATION' });
     this.wantConnected = true; this.retry = 0;
@@ -45,7 +46,7 @@ class Kick extends Connector {
           if (this.cfg.channelId) ws.send(JSON.stringify({ event: 'pusher:subscribe', data: { auth: '', channel: `channel.${this.cfg.channelId}` } }));
           break;
         case 'pusher_internal:subscription_succeeded':
-          if (String(m.channel).startsWith('chatrooms.')) { this.retry = 0; this.setStatus({ state: 'connected', detail: `kick.com/${this.cfg.slug}` }); this.log('info', `joined Kick chatroom ${this.cfg.chatroomId}`); }
+          if (String(m.channel).startsWith('chatrooms.')) { this.retry = 0; this.setStatus({ state: 'connected', detail: `kick.com/${this.cfg.slug}`, canWrite: !!this.auth }); this.log('info', `joined Kick chatroom ${this.cfg.chatroomId}`); }
           break;
         case 'pusher:ping': ws.send(JSON.stringify({ event: 'pusher:pong', data: {} })); break;
         case 'App\\Events\\ChatMessageEvent': {
@@ -65,6 +66,15 @@ class Kick extends Connector {
     });
     ws.on('close', () => { if (this.wantConnected) this.scheduleReconnect(() => this.open()); });
     ws.on('error', (e) => this.setStatus({ state: 'error', detail: e.message }));
+  }
+  // Send chat through Kick's official API with the signed-in account (scope chat:write).
+  async send(text) {
+    if (!this.auth || this.status.state !== 'connected') return super.send();
+    const token = await this.auth.getToken();
+    if (!token) throw Object.assign(new Error('Kick sign-in expired — reconnect your account'), { code: 'REAUTH_REQUIRED' });
+    const res = await fetch('https://api.kick.com/public/v1/chat', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'user', broadcaster_user_id: Number(this.auth.broadcasterId), content: String(text).slice(0, 500) }), signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error(`Kick returned ${res.status}`);
+    return true;
   }
   disconnect() { super.disconnect(); this.ws?.removeAllListeners(); this.ws?.close(); this.ws = null; }
 }

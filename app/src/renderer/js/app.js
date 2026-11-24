@@ -13,6 +13,19 @@ const app = {
   openSite: (p) => call('app:openWebsite', p).catch(toastErr),
 };
 window.__livex = app; // for debugging in dev tools only
+
+// Social sign-in: while a platform's sign-in is pending, ask the main process to check
+// it every 1.5 s (whichever screen is open). Stops by itself when the sign-in ends.
+const socialPolls = new Map();
+window.livex.on('social:changed', (v) => {
+  if (v.status !== 'connecting' || socialPolls.has(v.platform)) return;
+  const id = setInterval(async () => {
+    const r = await window.livex.invoke('social:poll', v.platform).catch(() => null);
+    if (r?.ok) window.dispatchEvent(new CustomEvent('livex:social', { detail: r.data }));
+    if (!r || !r.ok || r.data.status !== 'connecting') { clearInterval(id); socialPolls.delete(v.platform); }
+  }, 1500);
+  socialPolls.set(v.platform, id);
+});
 window.__livexRoute = () => { shellEls = null; route(); };
 
 const root = document.getElementById('root');

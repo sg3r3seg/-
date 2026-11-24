@@ -1,6 +1,7 @@
 import dashboard from './dashboard.js';
 import account from './account.js';
 import connections from './connections.js';
+import social from './social.js';
 import { tts, voiceStudio } from './tts.js';
 import { alerts, chatbot, commands } from './live.js';
 import { soundboard, macro, remote } from './control.js';
@@ -13,6 +14,7 @@ import { performance, diagnostics, settings } from './system.js';
 export const VIEWS = [
   { id: 'dashboard', group: 'main', icon: 'dashboard', title: 'nav_dashboard', ent: null, render: dashboard },
   { id: 'account', group: 'main', icon: 'key', title: 'nav_account', ent: null, render: account },
+  { id: 'social', group: 'main', icon: 'globe', title: 'nav_social', ent: null, render: social },
   { id: 'connections', group: 'main', icon: 'plug', title: 'nav_connections', ent: null, render: connections },
   { id: 'tts', group: 'voice', icon: 'mic', title: 'nav_tts', ent: 'tts', render: tts },
   { id: 'voice-studio', group: 'voice', icon: 'wave', title: 'nav_voice_studio', ent: 'tts', render: voiceStudio },

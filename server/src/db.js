@@ -127,6 +127,21 @@ CREATE TABLE IF NOT EXISTS activation_attempts (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS oauth_flows (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  flow_id     TEXT NOT NULL UNIQUE,
+  user_id     INTEGER NOT NULL,
+  device_uid  TEXT NOT NULL,
+  provider    TEXT NOT NULL,
+  state_hash  TEXT NOT NULL UNIQUE,
+  verifier_enc TEXT NOT NULL,
+  status      TEXT NOT NULL,          -- pending | done | error | collected | cancelled
+  result_enc  TEXT,
+  error       TEXT,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS voice_consents (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id          INTEGER NOT NULL,

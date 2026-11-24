@@ -9,8 +9,10 @@ module.exports = (ctx) => {
   const cmds = () => ctx.store.get('commands', [
     { id: uid(), trigger: '!livex', response: 'Powered by LiveX — ONE PLATFORM. EVERY CREATOR.', cooldownSec: 30, level: 'everyone', enabled: true, macroId: '' },
   ]);
-  const MOD_DEFAULT = { enabled: true, blockLinks: true, spamFilter: true, maxRepeats: 3, maxPerTenSec: 6, maxCapsRatio: 0.8, exemptMods: true, warn: false, warnTemplate: '@{user} please don’t post links or spam.' };
-  const bot = () => { const b = { enabled: false, welcome: { enabled: false, template: 'Welcome {user}! 👋' }, keywords: [], timed: [], ...ctx.store.get('chatbot', {}) }; b.moderation = { ...MOD_DEFAULT, ...(b.moderation || {}) }; return b; };
+  const he = () => ctx.settings?.get?.('language') === 'he'; // default texts follow the app language
+  const MOD = { enabled: true, blockLinks: true, spamFilter: true, maxRepeats: 3, maxPerTenSec: 6, maxCapsRatio: 0.8, exemptMods: true, warn: false };
+  const MOD_DEFAULT = () => ({ ...MOD, warnTemplate: he() ? '@{user} בבקשה בלי קישורים או ספאם.' : '@{user} please don’t post links or spam.' });
+  const bot = () => { const b = { enabled: false, welcome: { enabled: false, template: he() ? 'ברוכים הבאים {user}! 👋' : 'Welcome {user}! 👋' }, keywords: [], timed: [], ...ctx.store.get('chatbot', {}) }; b.moderation = { ...MOD_DEFAULT(), ...(b.moderation || {}) }; return b; };
   const history = new Map(); // userKey -> [{ts, text}]
   const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|gg|ly|me|co|tv|xyz|ru|info|link|shop|il)\b)/i;
   // Returns a reason string when a chat message must be blocked, else null.
@@ -70,7 +72,7 @@ module.exports = (ctx) => {
       };
       const md = b.moderation || {};
       out.moderation = { enabled: !!md.enabled, blockLinks: !!md.blockLinks, spamFilter: !!md.spamFilter, exemptMods: md.exemptMods !== false, warn: !!md.warn,
-        maxRepeats: num(md.maxRepeats, 3, 2, 20), maxPerTenSec: num(md.maxPerTenSec, 6, 2, 50), maxCapsRatio: num(md.maxCapsRatio, 0.8, 0.5, 1), warnTemplate: clampStr(md.warnTemplate || MOD_DEFAULT.warnTemplate, 200) };
+        maxRepeats: num(md.maxRepeats, 3, 2, 20), maxPerTenSec: num(md.maxPerTenSec, 6, 2, 50), maxCapsRatio: num(md.maxCapsRatio, 0.8, 0.5, 1), warnTemplate: clampStr(md.warnTemplate || MOD_DEFAULT().warnTemplate, 200) };
       ctx.store.set('chatbot', out); scheduleTimed(); return out;
     },
     start: scheduleTimed,

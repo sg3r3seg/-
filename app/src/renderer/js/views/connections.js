@@ -17,6 +17,9 @@ export default async function connections(root, app) {
     return undefined;
   }
   const list = await call('platforms:list');
+  let soc = {}; try { soc = Object.fromEntries((await call('social:list')).map((x) => [x.platform, x])); } catch { /* not signed in */ }
+  root.append(h('div', { class: 'msg show info row between' }, h('span', {}, h('span', { html: icon('globe', 15) }), ' ', t('conn_use_social')),
+    h('button', { class: 'btn sm primary', onclick: () => app.go('social') }, t('nav_social'))));
   const cards = {};
   for (const p of list) {
     const def = DEFS[p.platform];
@@ -41,6 +44,7 @@ export default async function connections(root, app) {
     cards[p.platform] = { render };
     root.append(card(
       h('div', { class: 'row between' }, h('div', { class: 'row' }, h('span', { class: `pf-badge pf-${p.platform}` }, p.label.slice(0, 2).toUpperCase()), h('h3', {}, p.label)), statusEl),
+      soc[p.platform]?.status === 'connected' ? h('div', { class: 'msg show ok' }, `${t('conn_signed_in_as')} ${soc[p.platform].account?.name || ''} — ${t('conn_fields_optional')}`) : null,
       h('p', { class: 'muted small' }, t(def.help)),
       locked ? h('div', { class: 'msg show warn' }, t('requires_pro')) : form,
       locked ? null : h('div', { class: 'row' }, connectBtn,
