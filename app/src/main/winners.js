@@ -1,7 +1,7 @@
 'use strict';
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { BrowserWindow, shell, app } = require('electron');
+const { BrowserWindow, shell, app, clipboard } = require('electron');
 const session = require('./session');
 const hub = require('./hub');
 
@@ -16,6 +16,18 @@ const LIVE = ['youtube', 'twitch', 'kick', 'tiktok'];
 const enc = encodeURIComponent;
 
 const windows = new Map(); // roomId -> BrowserWindow
+
+// Platform profile pages, from where the creator can send a direct message by hand.
+// (No platform offers an API to DM a viewer who has not written first.)
+const PROFILE = {
+  tiktok: (h) => `https://www.tiktok.com/@${enc(h)}`,
+  kick: (h) => `https://kick.com/${enc(h)}`,
+  twitch: (h) => `https://www.twitch.tv/${enc(h)}`,
+};
+const DM_TEXT = {
+  en: 'Hi! You won the giveaway on {creator}\'s stream 🎉 You just need to confirm: open this link to chat with the creator: {link}',
+  he: 'היי, זכית בהגרלה אצל {creator}! 🎉 רק צריך לאשר: היכנס/י ללינק כדי להתכתב עם היוצר/ת: {link}',
+};
 
 const winners = {
   CHAT_URL,
@@ -69,6 +81,23 @@ const winners = {
     w.on('closed', () => windows.delete(roomId));
     windows.set(roomId, w);
     return { opened: true, protected: true };
+  },
+  // QR code (SVG data URL) for the claim link, generated locally.
+  async qr(url) {
+    const svg = await require('qrcode').toString(String(url), { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#04101f', light: '#ffffff' } });
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+  },
+  canDm: (platform, handle) => !!(PROFILE[platform] && handle),
+  // "Private message" helper: copies the ready message (with the private link) and opens
+  // the winner's profile in the browser; the creator pastes it into a DM.
+  async dm(room, creator, lang) {
+    if (!room?.claimUrl) throw Object.assign(new Error('This private chat is closed'), { code: 'ROOM_CLOSED' });
+    if (!winners.canDm(room.platform, room.winnerHandle)) throw Object.assign(new Error('No profile page for this winner'), { code: 'NO_PROFILE' });
+    const text = DM_TEXT[lang === 'he' ? 'he' : 'en'].replace('{creator}', creator || 'LiveX').replace('{link}', room.claimUrl);
+    clipboard.writeText(text);
+    const profile = PROFILE[room.platform](room.winnerHandle);
+    await shell.openExternal(profile);
+    return { text, profile };
   },
   closeAllWindows() { for (const w of windows.values()) if (!w.isDestroyed()) w.close(); },
 };

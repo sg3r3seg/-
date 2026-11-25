@@ -10,13 +10,46 @@ h1 { margin: 0; font-size: calc(var(--size) * 1.1); }
 .names { margin-top: 10px; font-size: calc(var(--size) * .5); opacity: .8; min-height: 1em; }
 .winner { margin-top: 14px; font-size: calc(var(--size) * 1.2); font-weight: 800; animation: pop .6s ease both; }
 .closed { opacity: .6; }
-</style></head><body><div class="g card" id="g"><h1 class="grad" id="title"></h1><div class="kw" id="kw"></div><div class="count" id="count"></div><div class="names" id="names"></div><div class="winner grad" id="win"></div></div>
+/* Winner claim card: QR + link to the private chat (safe to show: only the winning account can enter) */
+.claim { margin-top: 14px; display: none; gap: 16px; align-items: center; animation: pop .6s ease both; }
+.claim.show { display: flex; }
+.claim img { width: 150px; height: 150px; background: #fff; border-radius: 12px; padding: 8px; flex-shrink: 0; }
+.claim .t1 { font-size: calc(var(--size) * 1.05); font-weight: 800; }
+.claim .t2 { font-size: calc(var(--size) * .62); margin-top: 4px; }
+.claim .url { font-size: calc(var(--size) * .55); margin-top: 6px; color: var(--accent); direction: ltr; unicode-bidi: isolate; word-break: break-all; }
+.claim .t3 { font-size: calc(var(--size) * .45); opacity: .75; margin-top: 6px; }
+.claim .bar { height: 4px; border-radius: 4px; background: var(--accent); margin-top: 10px; transform-origin: left; }
+.ok { margin-top: 14px; font-size: calc(var(--size) * .9); font-weight: 800; display: none; animation: pop .6s ease both; }
+.ok.show { display: block; }
+</style></head><body><div class="g card" id="g"><h1 class="grad" id="title"></h1><div class="kw" id="kw"></div><div class="count" id="count"></div><div class="names" id="names"></div><div class="winner grad" id="win"></div>
+<div class="claim" id="claim"><img id="qr" alt=""><div><div class="t1 grad" id="cWon"></div><div class="t2" id="cScan"></div><div class="url" id="cUrl"></div><div class="t3" id="cOnly"></div><div class="bar" id="cBar"></div></div></div>
+<div class="ok grad" id="ok"></div></div>
 <script>
-let last = null;
+let last = null; let claim = null; let hideT = null;
+const $ = (id) => document.getElementById(id);
+function renderClaim() {
+  if (!claim) return;
+  $('qr').src = claim.qr; $('cWon').textContent = lxT('won').replace('{n}', claim.handle || claim.name);
+  $('cScan').textContent = lxT('scan'); $('cUrl').textContent = claim.url.replace(/^https?:\/\//, ''); $('cOnly').textContent = lxT('only');
+}
 LiveXOverlay('giveaway', {
-  lang: () => { if (last) render(last); },
+  lang: () => { if (last) render(last); renderClaim(); },
   state: (s) => render(s),
-  winner: (w, replay) => { if (!replay) document.getElementById('win').textContent = '🏆 ' + w.name; },
+  winner: (w, replay) => { if (!replay) { $('win').textContent = '🏆 ' + w.name; $('claim').classList.remove('show'); $('ok').classList.remove('show'); } },
+  claim: (c, replay) => {
+    if (replay) return;
+    claim = c; renderClaim(); $('ok').classList.remove('show'); $('claim').classList.add('show');
+    const bar = $('cBar'); bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)';
+    requestAnimationFrame(() => { bar.style.transition = `transform ${c.durationMs}ms linear`; bar.style.transform = 'scaleX(0)'; });
+    clearTimeout(hideT); hideT = setTimeout(() => $('claim').classList.remove('show'), c.durationMs);
+  },
+  hideClaim: () => { clearTimeout(hideT); $('claim').classList.remove('show'); },
+  confirmed: (c, replay) => {
+    if (replay) return;
+    clearTimeout(hideT); $('claim').classList.remove('show');
+    $('ok').textContent = lxT('confirmed').replace('{n}', c.handle || c.name); $('ok').classList.add('show');
+    setTimeout(() => $('ok').classList.remove('show'), 10000);
+  },
 });
 function render(s) {
     last = s;

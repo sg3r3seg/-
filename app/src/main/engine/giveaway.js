@@ -38,6 +38,28 @@ module.exports = (ctx) => {
     reset() { g.entries = []; g.winners = []; keys.clear(); g.open = false; return push(); },
     draw() { return pickWinner(null); },
     hasEligible: () => eligible().length > 0,
+    // On-stream claim card: QR + link to the winner's private chat. Safe to show publicly:
+    // only the winning platform account can open the chat.
+    async showClaim(key, url, durationMs = 120_000) {
+      const w = g.winners.find((x) => x.key === key && x.status !== 'not_found');
+      if (!w) throw Object.assign(new Error('Winner not found in this giveaway'), { code: 'NOT_FOUND' });
+      if (!/^https?:\/\//.test(String(url || ''))) throw Object.assign(new Error('No private chat link for this winner'), { code: 'NO_LINK' });
+      const qr = await ctx.winners.qr(url);
+      ctx.overlay.broadcast('giveaway', 'claim', { name: w.name, handle: w.handle || null, platform: w.platform, url, qr, durationMs });
+      return { shown: true, durationMs };
+    },
+    hideClaim() { ctx.overlay.broadcast('giveaway', 'hideClaim', {}); return { hidden: true }; },
+    // The winner confirmed in the private chat (checked against the server by the caller).
+    confirmed(roomId) {
+      const w = g.winners.find((x) => x.roomId === roomId && x.status !== 'not_found');
+      if (!w || w.confirmedAt) return null;
+      w.confirmedAt = Date.now(); push();
+      ctx.overlay.broadcast('giveaway', 'confirmed', { name: w.name, handle: w.handle || null });
+      ctx.activity({ kind: 'giveaway', text: `Winner ${w.name} confirmed the prize in the private chat` });
+      const he = ctx.settings?.get?.('language') === 'he';
+      ctx.notify(he ? '🎉 הזוכה אישר/ה' : '🎉 Winner confirmed', he ? `${w.handle ? `@${w.handle}` : w.name} אישר/ה את הזכייה. אפשר לדבר בצ׳אט הפרטי.` : `${w.handle ? `@${w.handle}` : w.name} confirmed the prize. You can talk in the private chat.`);
+      return w;
+    },
     // The private chat opened for a winner (used to check whether they confirmed).
     setRoom(key, roomId) {
       const w = g.winners.find((x) => x.key === key && x.status !== 'not_found');

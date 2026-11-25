@@ -40,6 +40,6 @@ window.lxEsc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;'
 
 // Small overlay dictionary (overlay pages follow the LiveX app language).
 window.lxT = (k) => ({
-  en: { join: 'Type {k} to join', closed: 'Entries closed', entries: 'entries' },
-  he: { join: 'כתבו {k} כדי להשתתף', closed: 'ההרשמה נסגרה', entries: 'משתתפים' },
+  en: { join: 'Type {k} to join', closed: 'Entries closed', entries: 'entries', won: '@{n} you won!', scan: 'Scan to talk with me privately', only: 'Only the winner\'s account can open it', confirmed: '✓ @{n} confirmed the prize!' },
+  he: { join: 'כתבו {k} כדי להשתתף', closed: 'ההרשמה נסגרה', entries: 'משתתפים', won: '‎@{n} זכית!', scan: 'סרקו כדי לדבר איתי בפרטי', only: 'רק החשבון שזכה יכול להיכנס', confirmed: '✓ ‎@{n} אישר/ה את הזכייה!' },
 }[window.lxLang || 'en'][k] || k);

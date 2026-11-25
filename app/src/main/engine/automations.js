@@ -18,6 +18,12 @@ const BUILTIN = [
     transferFallback: ['🎁 @{from} could not be reached, so the prize moves on! Congrats @{user}, you won the giveaway: {title}!', '🎁 @{from} לא נמצא/ה, אז הפרס עובר הלאה! מזל טוב @{user}, זכית בהגרלה: {title}!'],
   },
   {
+    id: 'winner_qr_overlay', icon: 'gift', on: ['giveaway_room'], defaultOn: true,
+    name: ['Giveaway winner: QR on stream', 'זוכה בהגרלה: קוד QR בשידור'],
+    desc: ['Shows the win on the giveaway overlay with a QR code and the private link for 2 minutes, so the winner can open the private chat from their phone — even on TikTok, where LiveX cannot write in the live chat. Safe to show: only the winning account can get in. When the winner confirms, the overlay shows it.', 'מציג את הזכייה ב-Overlay של ההגרלה עם קוד QR והקישור הפרטי למשך 2 דקות, כדי שהזוכה יוכל/תוכל לפתוח את הצ׳אט הפרטי מהטלפון. זה עובד גם ב-TikTok, שבו LiveX לא יכולה לכתוב בצ׳אט של הלייב. בטוח להציג: רק החשבון שזכה יכול להיכנס. כשהזוכה מאשר/ת, זה מוצג ב-Overlay.'],
+    text: ['🎉 @{user} you won! Scan to talk with me privately · {link}', '🎉 ‎@{user} זכית! סרקו כדי לדבר איתי בפרטי · {link}'],
+  },
+  {
     id: 'thank_follow', icon: 'users', on: ['follow'], defaultOn: true, cooldownMs: 15_000,
     name: ['Thank new followers', 'תודה לעוקבים חדשים'],
     desc: ['Thanks new followers in chat (at most once every 15 seconds, so follow waves do not flood the chat).', 'מודה לעוקבים חדשים בצ׳אט (לכל היותר פעם ב-15 שניות, כדי שגל עוקבים לא יציף את הצ׳אט).'],
@@ -93,6 +99,7 @@ module.exports = (ctx) => {
       const r = await ctx.winners.create(data.winner, data.title);
       link = r.room.claimUrl;
       ctx.giveaway?.setRoom(data.winner.key, r.room.roomId);
+      api.trigger('giveaway_room', { winner: data.winner, title: data.title, link });
       if (!r.signInReady) note = 'platform sign-in is not set up on the server yet';
       ctx.send('winners:changed', { roomId: r.room.roomId });
     } catch (e) { note = e.message; }
@@ -109,6 +116,7 @@ module.exports = (ctx) => {
     if (!ctx.session.has('pro')) return;
     stat(a.id);
     if (a.id === 'winner_private_chat') return runWinner(a, data);
+    if (a.id === 'winner_qr_overlay') { await ctx.giveaway.showClaim(data.winner.key, data.link); return; }
     const text = render(L(a.text), evt || {}, { title: data?.title ?? evt?.title });
     if (a.alert) ctx.alerts.showText(text, 7000);
     await ctx.chat.reply(text, evt?.platform ? { platform: evt.platform } : null, `automation ${a.id}`);

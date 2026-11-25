@@ -81,6 +81,7 @@ export async function giveaway(root) {
   const loadRooms = async () => { try { rooms = Object.fromEntries((await call('winner:list')).map((r) => [r.roomId, r])); } catch { /* offline */ } renderWinners(); };
   function renderWinners() {
     const canChat = (x) => (x.platform === 'tiktok' ? !!x.handle : x.platform === 'youtube' ? !!x.userId : ['twitch', 'kick'].includes(x.platform) && !!(x.userId || x.handle));
+    const canDm = (x) => ['tiktok', 'kick', 'twitch'].includes(x.platform) && !!x.handle; // a profile page to send a DM from
     winnersEl.replaceChildren(...g.winners.slice().reverse().map((x) => {
       const room = x.roomId ? rooms[x.roomId] : null;
       const confirmed = room?.status === 'verified';
@@ -90,6 +91,8 @@ export async function giveaway(root) {
       return h('div', { class: `winner-row ${gone ? 'gone' : ''}` }, h('span', { html: icon('trophy', 16) }), h('b', {}, h('bdi', {}, x.name)),
         h('span', { class: 'muted small grow' }, `${x.platform} · ${fmtTime(x.at)}`, x.transferredFrom ? h('span', {}, ` · ${t('gw_instead_of')} `, h('bdi', {}, x.transferredFrom)) : null), st,
         gone ? null : h('button', { class: 'btn sm', disabled: !canChat(x), title: canChat(x) ? t('wc_start_hint') : t('wc_no_identity'), onclick: (e) => act(e.currentTarget, async () => { await call('winner:create', x.key); loadRooms(); }) }, h('span', { html: icon('chat', 14) }), t('wc_private_chat')),
+        gone || confirmed || !canChat(x) ? null : h('button', { class: 'btn sm', title: t('gw_qr_hint'), onclick: (e) => act(e.currentTarget, async () => { await call('giveaway:showClaim', x.key); loadRooms(); }, t('gw_qr_shown')) }, h('span', { html: icon('qr', 14) }), t('gw_qr')),
+        gone || confirmed || !canDm(x) ? null : h('button', { class: 'btn sm', title: t('gw_dm_hint'), onclick: (e) => act(e.currentTarget, async () => { await call('giveaway:dm', x.key); loadRooms(); }, t('gw_dm_done')) }, h('span', { html: icon('send', 14) }), t(`gw_dm_${x.platform}`)),
         gone || confirmed ? null : h('button', { class: 'btn sm danger', title: t('gw_transfer_hint'), onclick: async (e) => {
           if (!(await confirmBox(t('gw_transfer_confirm').replace('{name}', x.name), true))) return;
           await act(e.currentTarget, async () => { const nw = await call('giveaway:transfer', x.key); show(await call('giveaway:get')); loadRooms(); return nw; }, t('gw_transferred'));

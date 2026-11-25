@@ -7,7 +7,7 @@ import { icon } from '../icons.js';
 const PLAT = { youtube: 'YouTube', twitch: 'Twitch', kick: 'Kick', tiktok: 'TikTok' };
 export default async function winners(root) {
   const listEl = h('div', { class: 'stack' });
-  const statusBadge = (r) => (r.status === 'verified' ? badge(`✓ ${t('wc_verified')}`, 'ok') : r.status === 'closed' ? badge(t('wc_closed')) : badge(t('wc_waiting'), 'warn'));
+  const statusBadge = (r) => (r.status === 'verified' ? badge(`✓ ${t('wc_verified')}`, 'ok') : r.status === 'closed' ? badge(r.closeReason === 'not_found' ? t('gw_not_found') : t('wc_closed')) : badge(t('wc_waiting'), 'warn'));
   async function load() {
     let rooms;
     try { rooms = await call('winner:list'); } catch (e) { listEl.replaceChildren(h('div', { class: 'msg show err' }, e.message)); return; }
@@ -18,6 +18,7 @@ export default async function winners(root) {
         h('div', { class: 'row' }, h('b', {}, h('bdi', {}, r.winnerName)), statusBadge(r), r.unread ? badge(`${r.unread} ${t('wc_new')}`, 'ok') : null),
         h('div', { class: 'muted small' }, h('bdi', {}, r.title), ` · ${PLAT[r.platform] || r.platform} · ${fmtDate(r.createdAt)}`)),
       r.status !== 'closed' ? h('button', { class: 'btn sm primary', onclick: (e) => act(e.currentTarget, () => call('winner:open', r.roomId)) }, h('span', { html: icon('chat', 14) }), t('wc_open')) : null,
+      r.status === 'waiting' && r.winnerHandle && ['tiktok', 'kick', 'twitch'].includes(r.platform) ? h('button', { class: 'btn sm', title: t('gw_dm_hint'), onclick: (e) => act(e.currentTarget, () => call('winner:dm', r.roomId), t('gw_dm_done')) }, h('span', { html: icon('send', 14) }), t(`gw_dm_${r.platform}`)) : null,
       r.status !== 'closed' ? h('button', { class: 'btn sm danger', onclick: async (e) => { if (await confirmBox(t('wc_close_confirm'), true)) { await act(e.currentTarget, () => call('winner:close', r.roomId)); load(); } } }, t('wc_close')) : null)));
   }
   root.append(

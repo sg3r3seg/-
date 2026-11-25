@@ -60,7 +60,7 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     ok('An automation can be switched off', (await inv('automations:list')).data.find((x) => x.id === 'thank_gift').enabled === false);
     await win.locator('.au-card', { hasText: 'Thank gifts' }).locator('.toggle, input[type=checkbox]').first().click(); await sleep(300);
     await win.screenshot({ path: `${SHOTS}/automations.png` });
-    await win.locator('.au-card', { hasText: 'Giveaway winner' }).locator('button:has-text("Preview")').click(); await sleep(500);
+    await win.locator('.au-card', { hasText: 'Giveaway winner: private chat' }).locator('button:has-text("Preview")').click(); await sleep(500);
     const logText = async () => (await inv('diag:logs')).data.map((l) => l.message).join('\n');
     ok('Preview shows the message without sending it', /TEST \(not sent\): 🎉 Congrats/.test(await logText()));
 
@@ -74,6 +74,11 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     const g0 = (await inv('giveaway:get')).data;
     ok('Entry stores the platform identity (TikTok @username)', g0.entries[0]?.handle === 'shay_tt', JSON.stringify(g0.entries[0]));
     await inv('giveaway:close');
+    // The giveaway overlay as OBS loads it (Browser Source), open before the draw.
+    const browser = await chromium.launch(); cleanup.unshift(() => browser.close());
+    const ovUrl = (await inv('overlay:info')).data.routes.find((r) => r.route === 'giveaway').url;
+    const ov = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+    await ov.goto(ovUrl); await sleep(800);
     const drawn = (await inv('giveaway:draw')).data;
     ok('Winner drawn from real chat entries', drawn?.handle === 'shay_tt');
     const rooms = await until(async () => { const r = (await inv('winner:list')).data; return r.length ? r : null; });
@@ -81,9 +86,13 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     const ann = await until(async () => (await logText()).split('\n').find((x) => x.includes('/w/') && x.includes('Congrats') && !x.startsWith('TEST')));
     ok('Winner announcement with the private link went to the chat bot (TikTok cannot write: logged as not sent, never faked)', !!ann, ann);
     const claimUrl = rooms[0].claimUrl;
+    // On stream: QR + link (TikTok cannot receive the link in chat)
+    await ov.waitForSelector('#claim.show', { timeout: 10000 }).catch(() => {});
+    const card = await ov.evaluate(() => ({ shown: document.getElementById('claim').classList.contains('show'), won: document.getElementById('cWon').textContent, url: document.getElementById('cUrl').textContent, qr: document.getElementById('qr').src.slice(0, 26), qrLoaded: document.getElementById('qr').naturalWidth > 0 }));
+    ok('Giveaway overlay shows the win with a QR code and the private link', card.shown && /shay_tt/.test(card.won) && claimUrl.endsWith(card.url) && card.qr === 'data:image/svg+xml;base64,' && card.qrLoaded, JSON.stringify(card));
+    await sleep(1200); await ov.screenshot({ path: `${SHOTS}/overlay-qr.png` });
 
     // ---------- Winner's browser ----------
-    const browser = await chromium.launch(); cleanup.unshift(() => browser.close());
     const wctx = await browser.newContext({ viewport: { width: 420, height: 820 }, deviceScaleFactor: 2, locale: 'he-IL' });
     const wp = await wctx.newPage();
     await wp.goto(claimUrl); await wp.waitForSelector('#verifyBtn:not([disabled])', { timeout: 10000 });
@@ -98,6 +107,12 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     await win.click('.nav-item[data-view=winners]'); await win.waitForSelector('.wr-row');
     await until(async () => /Winner confirmed|הזוכה אומת/.test(await win.textContent('.wr-row')));
     ok('Winner chats screen shows the room as confirmed', /Winner confirmed/.test(await win.textContent('.wr-row')));
+    await ov.waitForSelector('#ok.show', { timeout: 20000 }).catch(() => {});
+    const okText = await ov.evaluate(() => (document.getElementById('ok').classList.contains('show') ? document.getElementById('ok').textContent : ''));
+    ok('When the winner confirms, the stream shows it (QR card replaced)', /@shay_tt confirmed the prize/.test(okText) && !(await ov.evaluate(() => document.getElementById('claim').classList.contains('show'))), okText);
+    await ov.screenshot({ path: `${SHOTS}/overlay-confirmed.png` });
+    const notes = (await inv('diag:logs')).data.map((l) => l.message).join('\n');
+    ok('Activity says the winner confirmed (no message content)', /Winner Shay TikTok confirmed the prize/.test(notes));
     // Record that the app turns on capture protection for the new window.
     await app.evaluate(({ BrowserWindow }) => { const orig = BrowserWindow.prototype.setContentProtection; globalThis.__cp = []; BrowserWindow.prototype.setContentProtection = function cp(v) { globalThis.__cp.push(v); return orig.call(this, v); }; });
     const newWin = app.waitForEvent('window');
@@ -142,6 +157,18 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     const rowOf = (name) => win.locator('.winner-row', { hasText: name });
     await until(async () => /Confirmed/.test(await rowOf('Shay TikTok').textContent()));
     ok('Confirmed winner shows no "not found" button', (await rowOf('Shay TikTok').locator('button:has-text("Not found")').count()) === 0);
+    // "Message on TikTok": copies the ready DM text and opens the winner's profile
+    await app.evaluate(({ shell, clipboard }) => {
+      globalThis.__ext = []; globalThis.__clip = [];
+      shell.openExternal = async (u) => { globalThis.__ext.push(u); };
+      const w = clipboard.writeText.bind(clipboard); clipboard.writeText = (t) => { globalThis.__clip.push(t); return w(t); };
+    });
+    await rowOf('Other').locator('button:has-text("Message on TikTok")').click(); await sleep(800);
+    const dm = await app.evaluate(() => ({ text: globalThis.__clip.at(-1) || '', opened: globalThis.__ext }));
+    ok('"Message on TikTok" copies the message with the private link and opens the winner\'s profile', dm.text.includes(r2.claimUrl) && /You won the giveaway on Shay's stream/.test(dm.text) && dm.opened[0] === 'https://www.tiktok.com/@real_winner2', JSON.stringify(dm));
+    await rowOf('Other').locator('button:has-text("QR on stream")').click();
+    await ov.waitForSelector('#claim.show', { timeout: 8000 }).catch(() => {});
+    ok('"QR on stream" shows that winner\'s QR card again', /real_winner2/.test(await ov.textContent('#cWon')));
     await rowOf('Other').locator('button:has-text("Not found")').click();
     await win.click('.modal button.danger');
     await until(async () => (await win.$$('.winner-row')).length === 3);

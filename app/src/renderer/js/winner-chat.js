@@ -1,5 +1,5 @@
 import { t, setLang } from './i18n.js';
-import { h, call, toastErr, confirmBox, fmtTime } from './ui.js';
+import { h, call, toastErr, confirmBox, fmtTime, act } from './ui.js';
 import { icon } from './icons.js';
 
 // Private chat with a giveaway winner. Runs in its own window, which the main process
@@ -36,7 +36,10 @@ function renderHead() {
     room.status === 'waiting' ? h('div', { class: 'msg show info small' }, t('wc_waiting_help')) : null,
     room.claimUrl ? h('div', { class: 'row wc-link' }, h('code', { class: 'mono small' }, room.claimUrl),
       h('button', { class: 'btn sm', onclick: () => call('app:copy', room.claimUrl).catch(toastErr) }, h('span', { html: icon('copy', 13) }), t('copy'))) : null,
-    room.status !== 'closed' ? h('div', { class: 'row' }, h('button', { class: 'btn sm danger', onclick: closeRoom }, h('span', { html: icon('x', 13) }), t('wc_close'))) : null,
+    room.status !== 'closed' ? h('div', { class: 'row' },
+      room.status === 'waiting' && room.winnerHandle && ['tiktok', 'kick', 'twitch'].includes(room.platform)
+        ? h('button', { class: 'btn sm', title: t('gw_dm_hint'), onclick: (e) => act(e.currentTarget, () => call('winner:dm', roomId), t('gw_dm_done')) }, h('span', { html: icon('send', 13) }), t(`gw_dm_${room.platform}`)) : null,
+      h('button', { class: 'btn sm danger', onclick: closeRoom }, h('span', { html: icon('x', 13) }), t('wc_close'))) : null,
   );
   input.disabled = sendBtn.disabled = room.status === 'closed';
 }

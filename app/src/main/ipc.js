@@ -18,7 +18,7 @@ const { ROUTES } = require('./overlay-server');
 //  - receives plain JSON arguments and validates them.
 const LEVEL = { public: 0, auth: 1, any: 2, pro: 3, tts: 4 };
 
-const WINNER_CHAT_CHANNELS = new Set(['winner:messages', 'winner:send', 'winner:close', 'winner:info', 'app:copy']);
+const WINNER_CHAT_CHANNELS = new Set(['winner:messages', 'winner:send', 'winner:close', 'winner:info', 'winner:dm', 'app:copy']);
 
 function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
   const ensure = (level) => {
@@ -130,6 +130,27 @@ function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
     return r;
   });
   handle('winner:open', 'pro', (id) => winners.open(room(id), ctx.settings.get('language')));
+  // Make sure a giveaway winner has a private room; returns the room as the server sees it.
+  const ensureRoom = async (key) => {
+    const w = ctx.giveaway.get().winners.find((x) => x.key === s(key, 200) && x.status !== 'not_found');
+    if (!w) throw coded('NOT_FOUND', 'Winner not found');
+    if (w.roomId) { const r = (await winners.list()).find((x) => x.roomId === w.roomId); if (r && r.status !== 'closed') return { w, room: r }; }
+    const r = await winners.create(w, ctx.giveaway.get().title);
+    ctx.giveaway.setRoom(w.key, r.room.roomId);
+    return { w, room: r.room };
+  };
+  const creatorName = (platform) => require('./social').profile(platform)?.name || session.state.user?.firstName || 'LiveX';
+  handle('giveaway:showClaim', 'pro', async (key) => { const { w, room: r } = await ensureRoom(key); return ctx.giveaway.showClaim(w.key, r.claimUrl); });
+  handle('giveaway:hideClaim', 'pro', () => ctx.giveaway.hideClaim());
+  handle('giveaway:dm', 'pro', async (key) => { const { room: r } = await ensureRoom(key); return winners.dm(r, creatorName(r.platform), ctx.settings.get('language')); });
+  handle('winner:dm', 'pro', async (id) => { const r = (await winners.list()).find((x) => x.roomId === room(id)); return winners.dm(r, creatorName(r?.platform), ctx.settings.get('language')); });
+  // Called when the window sees a room become confirmed; the main process re-checks with the server.
+  handle('winner:confirmed', 'pro', async (id) => {
+    const r = (await winners.list()).find((x) => x.roomId === room(id));
+    if (r?.status !== 'verified') return { announced: false };
+    return { announced: !!ctx.giveaway.confirmed(r.roomId) };
+  });
+
   handle('winner:info', 'pro', async (id) => (await winners.list()).find((x) => x.roomId === room(id)) || null);
   handle('winner:messages', 'pro', (id, after) => winners.messages(room(id), Number(after) || 0));
   handle('winner:send', 'pro', (id, text) => winners.send(room(id), s(text, 1000)));
