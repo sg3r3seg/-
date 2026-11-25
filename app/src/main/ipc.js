@@ -100,7 +100,7 @@ function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
       ctx.hotkeys.refresh();
     }
     ctx.settings.patch(out);
-    if (out.language) ctx.overlay.setLang(out.language);
+    if (out.language) { ctx.overlay.setLang(out.language); ctx.giveaway.setLang(out.language); }
     if ('overlayPort' in out) ctx.restartOverlay().catch(() => {});
     return ctx.settings.data;
   });

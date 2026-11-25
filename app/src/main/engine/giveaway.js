@@ -5,7 +5,9 @@ const { userKey, clampStr, num } = require('./util');
 // GIVEAWAY (keyword entries from real chat, cryptographically random draw) + WHEEL.
 module.exports = (ctx) => {
   let g = { keyword: '!join', title: 'Giveaway', open: false, entries: [], winners: [], allowModsOnly: false, ...ctx.store.get('giveaway', {}) };
-  let wheel = { items: ['Prize 1', 'Prize 2', 'Prize 3', 'Prize 4'], useEntries: false, last: null, ...ctx.store.get('wheel', {}) };
+  // Default wheel items follow the app language (until the creator edits them).
+  const DEFAULT_ITEMS = { en: ['Prize 1', 'Prize 2', 'Prize 3', 'Prize 4'], he: ['פרס 1', 'פרס 2', 'פרס 3', 'פרס 4'] };
+  let wheel = { items: DEFAULT_ITEMS[ctx.settings?.get?.('language') === 'he' ? 'he' : 'en'], useEntries: false, last: null, ...ctx.store.get('wheel', {}) };
   const keys = new Set(g.entries.map((x) => x.key));
   const push = () => {
     ctx.store.set('giveaway', g);
@@ -14,7 +16,7 @@ module.exports = (ctx) => {
     ctx.send('giveaway:state', { ...g, entries: g.entries.slice(-500), total: g.entries.length });
     return { ...g, total: g.entries.length };
   };
-  return {
+  const api = {
     get: () => ({ ...g, entries: g.entries.slice(-500), total: g.entries.length }),
     configure(c) { g.keyword = clampStr(c.keyword || '!join', 30).toLowerCase(); g.title = clampStr(c.title || 'Giveaway', 60); g.allowModsOnly = !!c.allowModsOnly; return push(); },
     open() { g.open = true; ctx.activity({ kind: 'giveaway', text: `Giveaway opened — type ${g.keyword}` }); return push(); },
@@ -46,6 +48,10 @@ module.exports = (ctx) => {
     },
     // WHEEL
     wheel: () => wheel,
+    setLang(lang) {
+      const isDefault = Object.values(DEFAULT_ITEMS).some((d) => d.join('|') === wheel.items.join('|'));
+      if (isDefault) api.saveWheel({ ...wheel, items: DEFAULT_ITEMS[lang === 'he' ? 'he' : 'en'] });
+    },
     saveWheel(w) {
       wheel.items = (Array.isArray(w.items) ? w.items : []).map((x) => clampStr(x, 40).trim()).filter(Boolean).slice(0, 40);
       wheel.useEntries = !!w.useEntries;
@@ -64,4 +70,5 @@ module.exports = (ctx) => {
       return { items, index, result: items[index] };
     },
   };
+  return api;
 };

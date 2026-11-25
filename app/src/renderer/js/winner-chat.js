@@ -14,7 +14,7 @@ const root = document.getElementById('root');
 const head = h('div', { class: 'wc-head' });
 const banner = h('div', { class: 'wc-banner' }, h('span', { html: icon('lock', 14) }), ' ', t('wc_hidden_note'));
 const list = h('div', { class: 'wc-msgs' });
-const input = h('textarea', { rows: 2, maxlength: 1000, placeholder: t('wc_placeholder') });
+const input = h('textarea', { class: 'input', rows: 2, maxlength: 1000, placeholder: t('wc_placeholder') });
 const sendBtn = h('button', { class: 'btn primary', type: 'submit' }, t('wc_send'));
 const form = h('form', { class: 'wc-form' }, input, sendBtn);
 root.append(head, banner, list, form);
