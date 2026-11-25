@@ -13,6 +13,9 @@ const BUILTIN = [
     desc: ['When a winner is drawn, LiveX opens a private chat room and posts a link in the live chat. Only the real winner can open it, after signing in with their platform account. The conversation opens in a window that is hidden from OBS and screen capture.', 'כשנבחר זוכה, LiveX פותחת חדר צ׳אט פרטי ומפרסמת קישור בצ׳אט של השידור. רק הזוכה האמיתי/ת יכול/ה להיכנס, אחרי התחברות עם חשבון הפלטפורמה. השיחה נפתחת בחלון שמוסתר מ-OBS ומצילום מסך.'],
     text: ['🎉 Congrats @{user}! You won the giveaway: {title}. Open this private link to talk with me: {link}', '🎉 מזל טוב @{user}! זכית בהגרלה: {title}. היכנס/י לקישור הפרטי כדי לדבר איתי: {link}'],
     fallback: ['🎉 Congrats @{user}! You won the giveaway: {title}!', '🎉 מזל טוב @{user}! זכית בהגרלה: {title}!'],
+    // used when the previous winner was not found and the prize moved on
+    transferText: ['🎁 @{from} could not be reached, so the prize moves on! Congrats @{user}, you won the giveaway: {title}. Open this private link to talk with me: {link}', '🎁 @{from} לא נמצא/ה, אז הפרס עובר הלאה! מזל טוב @{user}, זכית בהגרלה: {title}. היכנס/י לקישור הפרטי כדי לדבר איתי: {link}'],
+    transferFallback: ['🎁 @{from} could not be reached, so the prize moves on! Congrats @{user}, you won the giveaway: {title}!', '🎁 @{from} לא נמצא/ה, אז הפרס עובר הלאה! מזל טוב @{user}, זכית בהגרלה: {title}!'],
   },
   {
     id: 'thank_follow', icon: 'users', on: ['follow'], defaultOn: true, cooldownMs: 15_000,
@@ -66,7 +69,7 @@ const BUILTIN = [
 ];
 
 // Fill {link}/{title} first (util.fill blanks keys it does not know), then the event fields.
-const render = (tpl, e, extra = {}) => fill(String(tpl).replace(/\{(link|title)\}/g, (m, k) => (extra[k] ?? e?.[k] ?? m)), e);
+const render = (tpl, e, extra = {}) => fill(String(tpl).replace(/\{(link|title|from)\}/g, (m, k) => (extra[k] ?? e?.[k] ?? m)), e);
 
 module.exports = (ctx) => {
   const he = () => ctx.settings?.get?.('language') === 'he';
@@ -89,11 +92,14 @@ module.exports = (ctx) => {
     try {
       const r = await ctx.winners.create(data.winner, data.title);
       link = r.room.claimUrl;
+      ctx.giveaway?.setRoom(data.winner.key, r.room.roomId);
       if (!r.signInReady) note = 'platform sign-in is not set up on the server yet';
       ctx.send('winners:changed', { roomId: r.room.roomId });
     } catch (e) { note = e.message; }
     const who = { user: { name: data.winner.handle || data.winner.name } };
-    const text = link ? render(L(a.text), who, { title: data.title, link }) : render(L(a.fallback), who, { title: data.title });
+    const moved = !!data.from;
+    const extra = { title: data.title, link, from: data.from?.name };
+    const text = link ? render(L(moved ? a.transferText : a.text), who, extra) : render(L(moved ? a.transferFallback : a.fallback), who, extra);
     await ctx.chat.reply(text, { platform: data.winner.platform }, `automation ${a.id}`);
     if (!link) ctx.activity({ kind: 'automation', text: `Private chat not opened: ${note}` });
     else if (note) ctx.activity({ kind: 'automation', text: `Private chat link posted — ${note}` });

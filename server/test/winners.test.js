@@ -141,3 +141,17 @@ test('same winner reuses the open room; bad input is rejected', async () => {
   assert.equal((await pro.A('POST', `/api/rooms/${a.roomId}/messages`, { text: 'x'.repeat(1001) })).status, 400);
   assert.equal((await fetch(`${srv.base}/api/winner/nope-nope`)).status, 404);
 });
+
+test('"winner not found": closes a waiting room with that reason; a confirmed winner keeps the prize', async () => {
+  const waiting = await room({ platform: 'twitch', winnerId: '5151', winnerName: 'nobody', title: 'NF' });
+  const b = winnerBrowser();
+  assert.equal((await pro.A('POST', `/api/rooms/${waiting.roomId}/close`, { reason: 'not_found' })).body.reason, 'not_found');
+  const info = (await b.api('GET', `/api/winner/${codeOf(waiting)}`)).body;
+  assert.equal(info.status, 'closed'); assert.equal(info.closeReason, 'not_found', 'the winner page can say the prize was transferred');
+  assert.equal((await pro.A('GET', '/api/rooms')).body.rooms.find((x) => x.roomId === waiting.roomId).closeReason, 'not_found');
+  const confirmed = await room({ platform: 'twitch', winnerId: '6262', winnerHandle: 'shaylive', winnerName: 'ShayLive', title: 'NF2' });
+  await winnerBrowser().signIn(codeOf(confirmed));
+  const r = await pro.A('POST', `/api/rooms/${confirmed.roomId}/close`, { reason: 'not_found' });
+  assert.equal(r.status, 409); assert.equal(r.body.error, 'WINNER_CONFIRMED');
+  assert.equal((await pro.A('GET', '/api/rooms')).body.rooms.find((x) => x.roomId === confirmed.roomId).status, 'verified', 'room untouched');
+});

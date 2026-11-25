@@ -9,6 +9,7 @@
       p_check: 'LiveX checks that the account you sign in with is the one that won.', p_nopass: 'Your password stays with {platform}. LiveX never sees it.',
       chat_title: 'Private chat with {host}', chat_sub: '{title} · {platform}', locked: '🔒 Private', send: 'Send', placeholder: 'Write a message…',
       empty: 'No messages yet. Say hi! 👋', you: 'You', closed_t: 'This chat was closed', closed_x: 'The creator closed this private chat. Its messages were deleted.',
+      moved_t: 'The prize was transferred', moved_x: 'The creator could not reach you in time, so the prize went to another participant. Good luck next time! 🍀',
       taken_t: 'Already confirmed', taken_x: 'The winner already opened this private chat on another browser.',
       nf_t: 'Link not valid', nf_x: 'This private chat link does not exist or has expired.',
       notcfg: '{platform} sign-in is not set up on the LiveX server yet. Ask the creator for another way to get in touch.',
@@ -23,6 +24,7 @@
       p_check: 'LiveX בודקת שהחשבון שאיתו התחברתם הוא החשבון שזכה.', p_nopass: 'הסיסמה נשארת אצל {platform}. LiveX לא רואה אותה.',
       chat_title: 'צ׳אט פרטי עם {host}', chat_sub: '{title} · {platform}', locked: '🔒 פרטי', send: 'שליחה', placeholder: 'כתבו הודעה…',
       empty: 'אין עדיין הודעות. תגידו שלום! 👋', you: 'את/ה', closed_t: 'הצ׳אט נסגר', closed_x: 'היוצר/ת סגר/ה את הצ׳אט הפרטי וההודעות נמחקו.',
+      moved_t: 'הפרס הועבר', moved_x: 'היוצר/ת לא הצליח/ה ליצור איתך קשר בזמן, ולכן הפרס עבר למשתתף/ת אחר/ת. בהצלחה בפעם הבאה! 🍀',
       taken_t: 'כבר אושר', taken_x: 'הזוכה כבר פתח/ה את הצ׳אט הפרטי בדפדפן אחר.',
       nf_t: 'הקישור לא תקף', nf_x: 'הקישור לצ׳אט הפרטי לא קיים או שפג תוקפו.',
       notcfg: 'ההתחברות עם {platform} עוד לא הוגדרה בשרת LiveX. בקשו מהיוצר/ת דרך אחרת ליצור קשר.',
@@ -63,7 +65,7 @@
   }
   async function refresh() {
     try { addMsgs((await api('GET', `/api/winner/${code}/messages?after=${lastId}`)).messages); } catch (e) {
-      if (e.code === 'ROOM_CLOSED') { clearInterval(poll); state('🔒', t('closed_t'), t('closed_x')); }
+      if (e.code === 'ROOM_CLOSED') { clearInterval(poll); load(); } // shows why it was closed
     }
   }
   function render() {
@@ -83,7 +85,7 @@
   async function load() {
     try { info = await api('GET', `/api/winner/${code}`); } catch { render(); return state('🔗', t('nf_t'), t('nf_x')); }
     render();
-    if (info.status === 'closed') return state('🔒', t('closed_t'), t('closed_x'));
+    if (info.status === 'closed') return info.closeReason === 'not_found' ? state('🎁', t('moved_t'), t('moved_x')) : state('🔒', t('closed_t'), t('closed_x'));
     if (info.you) {
       show('chat'); if (qs.get('ok')) { msg('chatMsg', 'ok', t('ok_verified')); history.replaceState(null, '', location.pathname); }
       await refresh(); clearInterval(poll); poll = setInterval(refresh, 3000); return;
@@ -101,7 +103,7 @@
   $('form').addEventListener('submit', async (ev) => {
     ev.preventDefault(); const text = $('text').value.trim(); if (!text) return;
     $('sendBtn').disabled = true;
-    try { addMsgs([(await api('POST', `/api/winner/${code}/messages`, { text })).message]); $('text').value = ''; $('chatMsg').className = 'msg'; } catch (e) { msg('chatMsg', 'err', e.code === 'ROOM_CLOSED' ? t('closed_x') : t('e_send')); } finally { $('sendBtn').disabled = false; $('text').focus(); }
+    try { addMsgs([(await api('POST', `/api/winner/${code}/messages`, { text })).message]); $('text').value = ''; $('chatMsg').className = 'msg'; } catch (e) { if (e.code === 'ROOM_CLOSED') { clearInterval(poll); load(); } else msg('chatMsg', 'err', t('e_send')); } finally { $('sendBtn').disabled = false; $('text').focus(); }
   });
   $('langBtn').addEventListener('click', () => { lang = lang === 'he' ? 'en' : 'he'; try { localStorage.setItem('lvx_lang', lang); } catch { /* ignore */ } render(); });
   load();

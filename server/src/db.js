@@ -148,7 +148,8 @@ CREATE TABLE IF NOT EXISTS winner_rooms (
   created_at    INTEGER NOT NULL,
   expires_at    INTEGER NOT NULL,
   verified_at   INTEGER,
-  closed_at     INTEGER
+  closed_at     INTEGER,
+  close_reason  TEXT                  -- closed | expired | not_found (prize moved to another winner)
 );
 CREATE INDEX IF NOT EXISTS idx_winner_rooms_user ON winner_rooms(user_id, created_at);
 CREATE TABLE IF NOT EXISTS winner_messages (
@@ -219,6 +220,9 @@ function open(file) {
   db = new DatabaseSync(dbFile);
   db.exec('PRAGMA busy_timeout = 5000'); // server and admin CLI may use the DB at the same time
   db.exec(SCHEMA);
+  // Additive migrations for databases created by earlier versions.
+  const cols = (t) => db.prepare(`PRAGMA table_info(${t})`).all().map((c) => c.name);
+  if (!cols('winner_rooms').includes('close_reason')) db.exec('ALTER TABLE winner_rooms ADD COLUMN close_reason TEXT');
   const up = db.prepare(`INSERT INTO products(code,name,price_agorot,currency,entitlements)
     VALUES(?,?,?,'ILS',?) ON CONFLICT(code) DO UPDATE SET name=excluded.name,
     price_agorot=excluded.price_agorot, entitlements=excluded.entitlements`);

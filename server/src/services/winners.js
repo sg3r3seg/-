@@ -34,13 +34,14 @@ function hasPro(userId, deviceUid) {
 function purgeExpired() {
   const d = db.get();
   const old = d.prepare("SELECT id FROM winner_rooms WHERE status!='closed' AND expires_at < ?").all(db.now());
-  for (const r of old) closeRow(r.id);
+  for (const r of old) closeRow(r.id, 'expired');
   d.prepare("DELETE FROM identity_flows WHERE expires_at < ?").run(db.now() - 3600_000);
 }
-function closeRow(id) {
+const CLOSE_REASONS = ['closed', 'expired', 'not_found'];
+function closeRow(id, reason = 'closed') {
   const d = db.get();
   d.prepare('DELETE FROM winner_messages WHERE room_id=?').run(id);
-  d.prepare("UPDATE winner_rooms SET status='closed', session_hash=NULL, closed_at=? WHERE id=?").run(db.now(), id);
+  d.prepare("UPDATE winner_rooms SET status='closed', session_hash=NULL, closed_at=?, close_reason=? WHERE id=?").run(db.now(), CLOSE_REASONS.includes(reason) ? reason : 'closed', id);
 }
 
 const viewForHost = (r) => {
@@ -49,7 +50,7 @@ const viewForHost = (r) => {
   return {
     roomId: r.room_id, platform: r.platform, winnerName: r.winner_name, winnerHandle: r.winner_handle || null, title: r.title,
     status: r.status, verifiedName: r.verified_name || null, claimUrl: r.status === 'closed' ? null : claimUrl(r.code),
-    createdAt: r.created_at, expiresAt: r.expires_at, verifiedAt: r.verified_at || null, closedAt: r.closed_at || null,
+    createdAt: r.created_at, expiresAt: r.expires_at, verifiedAt: r.verified_at || null, closedAt: r.closed_at || null, closeReason: r.close_reason || null,
     lastMessageAt: last.at || null, unread,
   };
 };
@@ -114,10 +115,15 @@ function addMessage(r, sender, text) {
   return { id: Number(res.lastInsertRowid), from: sender, text: t, at: db.now() };
 }
 const hostSend = (user, roomId, text) => ({ message: addMessage(ownRoom(user, roomId), 'host', text) });
-function hostClose(user, roomId) {
+// reason 'not_found': the winner did not show up and the creator gave the prize to
+// someone else. Allowed only while the winner has NOT confirmed (a confirmed winner
+// keeps the prize); the winner's page then says the prize was transferred.
+function hostClose(user, roomId, reason) {
   const r = ownRoom(user, roomId);
-  if (r.status !== 'closed') { closeRow(r.id); db.audit(user.id, 'winner_room_closed', { platform: r.platform }); }
-  return { ok: true };
+  const why = reason === 'not_found' ? 'not_found' : 'closed';
+  if (why === 'not_found' && r.status === 'verified') fail(409, 'WINNER_CONFIRMED', 'The winner already confirmed in the private chat, so the prize cannot be transferred');
+  if (r.status !== 'closed') { closeRow(r.id, why); db.audit(user.id, why === 'not_found' ? 'winner_room_not_found' : 'winner_room_closed', { platform: r.platform }); }
+  return { ok: true, reason: why };
 }
 
 // ---- winner (public web page) ------------------------------------------------------
@@ -135,7 +141,7 @@ function publicInfo(code, token) {
   const def = O.PROVIDERS[r.platform];
   return {
     host: host?.first_name || 'LiveX', title: r.title, platform: r.platform, platformLabel: def?.label || r.platform,
-    winnerName: r.winner_name, status: r.status, you: sessionOk(r, token), signInReady: O.configured(r.platform),
+    winnerName: r.winner_name, status: r.status, closeReason: r.status === 'closed' ? (r.close_reason || 'closed') : null, you: sessionOk(r, token), signInReady: O.configured(r.platform),
   };
 }
 

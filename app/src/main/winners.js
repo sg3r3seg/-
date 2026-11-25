@@ -40,8 +40,8 @@ const winners = {
   async list() { return (await session.authed('GET', '/api/rooms')).rooms; },
   async messages(roomId, after) { return session.authed('GET', `/api/rooms/${enc(roomId)}/messages?after=${Number(after) || 0}`); },
   async send(roomId, text) { return session.authed('POST', `/api/rooms/${enc(roomId)}/messages`, { body: { text: String(text || '').slice(0, 1000) } }); },
-  async close(roomId) {
-    const r = await session.authed('POST', `/api/rooms/${enc(roomId)}/close`, { body: {} });
+  async close(roomId, reason) {
+    const r = await session.authed('POST', `/api/rooms/${enc(roomId)}/close`, { body: reason ? { reason } : {} });
     windows.get(roomId)?.close();
     return r;
   },

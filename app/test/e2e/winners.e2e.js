@@ -130,6 +130,38 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     ok('Anyone else who opens the link is refused (not the winning account)', /not the account that won|לא החשבון שזכה/.test(await ip.textContent('#claimMsg')));
     await ip.screenshot({ path: `${SHOTS}/intruder-refused.png` });
 
+    // ---------- Winner not found -> transfer the prize ----------
+    await inv('giveaway:open'); await sleep(200);
+    emit('chat', { uniqueId: 'third.viewer', nickname: 'Third', comment: '!join', userId: '777' });
+    await until(async () => (await inv('giveaway:get')).data.total === 3);
+    await inv('giveaway:close');
+    const confirmedKey = (await inv('giveaway:get')).data.winners.find((x) => x.handle === 'shay_tt').key;
+    const refused = await inv('giveaway:transfer', confirmedKey);
+    ok('A winner who confirmed keeps the prize (transfer refused)', refused.error?.code === 'WINNER_CONFIRMED', JSON.stringify(refused.error));
+    await win.click('.nav-item[data-view=giveaway]'); await win.waitForSelector('.winner-row');
+    const rowOf = (name) => win.locator('.winner-row', { hasText: name });
+    await until(async () => /Confirmed/.test(await rowOf('Shay TikTok').textContent()));
+    ok('Confirmed winner shows no "not found" button', (await rowOf('Shay TikTok').locator('button:has-text("Not found")').count()) === 0);
+    await rowOf('Other').locator('button:has-text("Not found")').click();
+    await win.click('.modal button.danger');
+    await until(async () => (await win.$$('.winner-row')).length === 3);
+    const gNow = (await inv('giveaway:get')).data;
+    const old = gNow.winners.find((x) => x.handle === 'real_winner2'); const nw = gNow.winners.at(-1);
+    ok('"Not found" marks the winner and draws a new one from the remaining participants', old.status === 'not_found' && nw.handle === 'third.viewer' && nw.transferredFrom === 'Other', JSON.stringify({ old: old.status, nw: nw.handle }));
+    const goneRow = win.locator('.winner-row.gone');
+    await until(async () => /Not found → Third/.test(await goneRow.textContent()));
+    ok('Giveaway screen shows "Not found → new winner"', /Not found → Third/.test(await goneRow.textContent()) && /instead of Other/.test(await win.locator('.winner-row', { hasText: 'Third' }).first().textContent()));
+    const oldRoom = (await inv('winner:list')).data.find((x) => x.winnerHandle === 'real_winner2');
+    ok('The old winner\'s private chat is closed as "not found"', oldRoom.status === 'closed' && oldRoom.closeReason === 'not_found');
+    await ip.reload(); await ip.waitForSelector('#state:not(.hidden)');
+    ok('The old winner\'s page says the prize was transferred', /transferred|הועבר/.test(await ip.textContent('#state')), await ip.textContent('#state'));
+    await ip.screenshot({ path: `${SHOTS}/prize-transferred.png` });
+    const newRoom = await until(async () => (await inv('winner:list')).data.find((x) => x.winnerHandle === 'third.viewer'));
+    ok('The new winner automatically gets a private chat', newRoom?.status === 'waiting');
+    const moved = await until(async () => (await logText()).split('\n').find((x) => x.includes('could not be reached, so the prize moves on') && x.includes('@third.viewer')));
+    ok('Chat announcement says the prize moved to the new winner', !!moved, moved);
+    await win.screenshot({ path: `${SHOTS}/giveaway-transfer.png` });
+
     // ---------- Close ----------
     chat.on('dialog', (d) => d.accept());
     await chat.click('button:has-text("Close chat")'); await chat.click('.modal button.danger').catch(() => {});

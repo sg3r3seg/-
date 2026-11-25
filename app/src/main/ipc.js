@@ -125,6 +125,7 @@ function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
     const w = ctx.giveaway.get().winners.find((x) => x.key === s(key, 200));
     if (!w) throw coded('NOT_FOUND', 'Winner not found');
     const r = await winners.create(w, ctx.giveaway.get().title);
+    ctx.giveaway.setRoom(w.key, r.room.roomId);
     winners.open(r.room.roomId, ctx.settings.get('language'));
     return r;
   });
@@ -133,6 +134,23 @@ function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
   handle('winner:messages', 'pro', (id, after) => winners.messages(room(id), Number(after) || 0));
   handle('winner:send', 'pro', (id, text) => winners.send(room(id), s(text, 1000)));
   handle('winner:close', 'pro', (id) => winners.close(room(id)));
+
+  // "Winner not found" -> give the prize to a new random participant. Only while the
+  // winner has not confirmed in the private chat; a confirmed winner keeps the prize.
+  handle('giveaway:transfer', 'pro', async (key) => {
+    const w = ctx.giveaway.get().winners.find((x) => x.key === s(key, 200));
+    if (!w) throw coded('NOT_FOUND', 'Winner not found in this giveaway');
+    if (w.status === 'not_found') throw coded('ALREADY_TRANSFERRED', 'The prize of this winner was already transferred');
+    // Check before closing the winner's chat, so nothing changes if nobody is left.
+    if (!ctx.giveaway.hasEligible()) throw coded('NO_OTHER_ENTRIES', 'There is no other participant to transfer the prize to');
+    if (w.roomId) {
+      let room;
+      try { room = (await winners.list()).find((x) => x.roomId === w.roomId); } catch { throw coded('NETWORK', 'Could not check whether the winner confirmed. Check the connection and try again.'); }
+      if (room?.status === 'verified') throw coded('WINNER_CONFIRMED', 'The winner already confirmed in the private chat, so the prize cannot be transferred');
+      if (room && room.status !== 'closed') await winners.close(w.roomId, 'not_found');
+    }
+    return ctx.giveaway.transfer(w.key);
+  });
 
   // ---- built-in automations (locked: on/off only) ----------------------------
   handle('automations:list', 'auth', () => ctx.automations.list());

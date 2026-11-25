@@ -11,28 +11,51 @@ module.exports = (ctx) => {
   const keys = new Set(g.entries.map((x) => x.key));
   const push = () => {
     ctx.store.set('giveaway', g);
-    const pub = { title: g.title, keyword: g.keyword, open: g.open, count: g.entries.length, winners: g.winners.slice(-5).map((w) => ({ name: w.name, platform: w.platform })), recent: g.entries.slice(-8).map((x) => x.name) };
+    const pub = { title: g.title, keyword: g.keyword, open: g.open, count: g.entries.length, winners: g.winners.filter((w) => w.status !== 'not_found').slice(-5).map((w) => ({ name: w.name, platform: w.platform })), recent: g.entries.slice(-8).map((x) => x.name) };
     ctx.overlay.broadcast('giveaway', 'state', pub, { sticky: true });
     ctx.send('giveaway:state', { ...g, entries: g.entries.slice(-500), total: g.entries.length });
     return { ...g, total: g.entries.length };
   };
+  // Participants who have not won yet (winners marked "not found" cannot win again).
+  const eligible = () => g.entries.filter((x) => !g.winners.some((w) => w.key === x.key));
+  function pickWinner(from) {
+    const pool = eligible();
+    if (!pool.length) throw Object.assign(new Error('No eligible entries'), { code: 'NO_ENTRIES' });
+    const w = pool[crypto.randomInt(pool.length)];
+    const win = { ...w, at: Date.now(), status: 'won', ...(from ? { transferredFrom: from.name } : {}) };
+    g.winners.push(win);
+    ctx.overlay.broadcast('giveaway', 'winner', { name: w.name, platform: w.platform, title: g.title });
+    ctx.activity({ kind: 'giveaway', text: from ? `Winner ${from.name} not found — prize transferred to ${w.name} (${w.platform})` : `Winner: ${w.name} (${w.platform})` });
+    push();
+    ctx.automations?.trigger('giveaway_winner', { winner: win, title: g.title, from: from ? { name: from.handle || from.name } : null });
+    return win;
+  }
   const api = {
     get: () => ({ ...g, entries: g.entries.slice(-500), total: g.entries.length }),
     configure(c) { g.keyword = clampStr(c.keyword || '!join', 30).toLowerCase(); g.title = clampStr(c.title || 'Giveaway', 60); g.allowModsOnly = !!c.allowModsOnly; return push(); },
     open() { g.open = true; ctx.activity({ kind: 'giveaway', text: `Giveaway opened — type ${g.keyword}` }); return push(); },
     close() { g.open = false; return push(); },
     reset() { g.entries = []; g.winners = []; keys.clear(); g.open = false; return push(); },
-    draw() {
-      const pool = g.entries.filter((x) => !g.winners.some((w) => w.key === x.key));
-      if (!pool.length) throw Object.assign(new Error('No eligible entries'), { code: 'NO_ENTRIES' });
-      const w = pool[crypto.randomInt(pool.length)];
-      const win = { ...w, at: Date.now() };
-      g.winners.push(win);
-      ctx.overlay.broadcast('giveaway', 'winner', { name: w.name, platform: w.platform, title: g.title });
-      ctx.activity({ kind: 'giveaway', text: `Winner: ${w.name} (${w.platform})` });
+    draw() { return pickWinner(null); },
+    hasEligible: () => eligible().length > 0,
+    // The private chat opened for a winner (used to check whether they confirmed).
+    setRoom(key, roomId) {
+      const w = g.winners.find((x) => x.key === key && x.status !== 'not_found');
+      if (w && roomId) { w.roomId = String(roomId); push(); }
+    },
+    // "Winner not found": the drawn winner never showed up, so the prize moves to a new
+    // random participant. The caller (IPC) first checks the winner did NOT confirm in the
+    // private chat; nothing changes if there is nobody left to give the prize to.
+    transfer(key) {
+      const w = g.winners.find((x) => x.key === key);
+      if (!w) throw Object.assign(new Error('Winner not found in this giveaway'), { code: 'NOT_FOUND' });
+      if (w.status === 'not_found') throw Object.assign(new Error('The prize of this winner was already transferred'), { code: 'ALREADY_TRANSFERRED' });
+      if (!eligible().length) throw Object.assign(new Error('There is no other participant to transfer the prize to'), { code: 'NO_OTHER_ENTRIES' });
+      w.status = 'not_found'; w.notFoundAt = Date.now();
+      const next = pickWinner(w);
+      w.transferredTo = next.name;
       push();
-      ctx.automations?.trigger('giveaway_winner', { winner: win, title: g.title });
-      return win;
+      return next;
     },
     onEvent(e) {
       if (!g.open || e.type !== 'chat' || e.test || e.blocked || !ctx.session.has('pro')) return;

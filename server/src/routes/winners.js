@@ -14,7 +14,7 @@ rooms.post('/', limiter('room-create', 30, 3600_000, (req) => req.user.id), h(as
 rooms.get('/', h(async (req, res) => res.json(W.list(req.user))));
 rooms.get('/:roomId/messages', limiter('room-poll', 1200, 600_000, (req) => req.user.id), h(async (req, res) => res.json(W.hostMessages(req.user, req.params.roomId, req.query.after))));
 rooms.post('/:roomId/messages', limiter('room-send', 60, 60_000, (req) => req.user.id), h(async (req, res) => res.json(W.hostSend(req.user, req.params.roomId, str(req.body?.text, { min: 1, max: 1000, name: 'text' })))));
-rooms.post('/:roomId/close', h(async (req, res) => res.json(W.hostClose(req.user, req.params.roomId))));
+rooms.post('/:roomId/close', h(async (req, res) => res.json(W.hostClose(req.user, req.params.roomId, req.body?.reason))));
 
 // Winner side (public page, the cookie proves the platform sign-in).
 const cookieName = (code) => `lvxw_${String(code).replace(/[^A-Za-z0-9_-]/g, '')}`;

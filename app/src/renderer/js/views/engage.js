@@ -76,14 +76,33 @@ export async function giveaway(root) {
   const kw = input({ value: g.keyword, maxlength: 30, class: 'input mono' });
   const title = input({ value: g.title, maxlength: 60 });
   const stateEl = h('div'); const entriesEl = h('div', { class: 'entries' }); const winnersEl = h('div', { class: 'stack sm' });
+  // Private-chat status per room, to show whether a winner confirmed (refreshed every 10 s).
+  let rooms = {};
+  const loadRooms = async () => { try { rooms = Object.fromEntries((await call('winner:list')).map((r) => [r.roomId, r])); } catch { /* offline */ } renderWinners(); };
+  function renderWinners() {
+    const canChat = (x) => (x.platform === 'tiktok' ? !!x.handle : x.platform === 'youtube' ? !!x.userId : ['twitch', 'kick'].includes(x.platform) && !!(x.userId || x.handle));
+    winnersEl.replaceChildren(...g.winners.slice().reverse().map((x) => {
+      const room = x.roomId ? rooms[x.roomId] : null;
+      const confirmed = room?.status === 'verified';
+      const gone = x.status === 'not_found';
+      const st = gone ? badge(`${t('gw_not_found')}${x.transferredTo ? ` → ${x.transferredTo}` : ''}`, 'err')
+        : confirmed ? badge(`✓ ${t('gw_confirmed')}`, 'ok') : room ? badge(t('wc_waiting'), 'warn') : null;
+      return h('div', { class: `winner-row ${gone ? 'gone' : ''}` }, h('span', { html: icon('trophy', 16) }), h('b', {}, h('bdi', {}, x.name)),
+        h('span', { class: 'muted small grow' }, `${x.platform} · ${fmtTime(x.at)}`, x.transferredFrom ? h('span', {}, ` · ${t('gw_instead_of')} `, h('bdi', {}, x.transferredFrom)) : null), st,
+        gone ? null : h('button', { class: 'btn sm', disabled: !canChat(x), title: canChat(x) ? t('wc_start_hint') : t('wc_no_identity'), onclick: (e) => act(e.currentTarget, async () => { await call('winner:create', x.key); loadRooms(); }) }, h('span', { html: icon('chat', 14) }), t('wc_private_chat')),
+        gone || confirmed ? null : h('button', { class: 'btn sm danger', title: t('gw_transfer_hint'), onclick: async (e) => {
+          if (!(await confirmBox(t('gw_transfer_confirm').replace('{name}', x.name), true))) return;
+          await act(e.currentTarget, async () => { const nw = await call('giveaway:transfer', x.key); show(await call('giveaway:get')); loadRooms(); return nw; }, t('gw_transferred'));
+        } }, h('span', { html: icon('refresh', 14) }), t('gw_transfer')));
+    }));
+  }
   const show = (x) => {
     g = x;
     stateEl.replaceChildren(h('div', { class: 'row' }, badge(g.open ? t('giveaway_open') : t('giveaway_closed'), g.open ? 'ok' : ''), h('span', { class: 'big-num' }, g.total), h('span', { class: 'muted' }, t('entries'))));
     entriesEl.replaceChildren(...(g.entries.length ? g.entries.slice(-200).reverse().map((e) => h('span', { class: 'entry' }, h('span', { class: `pf-dot pf-${e.platform}` }), e.name)) : [empty(t('no_entries'))]));
     // Private chat needs the winner's platform account id / @handle (from the live chat).
     const canChat = (x) => (x.platform === 'tiktok' ? !!x.handle : x.platform === 'youtube' ? !!x.userId : ['twitch', 'kick'].includes(x.platform) && !!(x.userId || x.handle));
-    winnersEl.replaceChildren(...g.winners.slice().reverse().map((x) => h('div', { class: 'winner-row' }, h('span', { html: icon('trophy', 16) }), h('b', {}, h('bdi', {}, x.name)), h('span', { class: 'muted small grow' }, `${x.platform} · ${fmtTime(x.at)}`),
-      h('button', { class: 'btn sm', disabled: !canChat(x), title: canChat(x) ? t('wc_start_hint') : t('wc_no_identity'), onclick: (e) => act(e.currentTarget, () => call('winner:create', x.key)) }, h('span', { html: icon('chat', 14) }), t('wc_private_chat')))));
+    renderWinners();
   };
   show(g);
   const items = textarea({ value: w.items.join('\n'), rows: 6 });
@@ -107,5 +126,8 @@ export async function giveaway(root) {
         btn(t('save'), (e) => act(e.currentTarget, async () => { w = await call('wheel:save', { items: items.value.split('\n'), useEntries: w.useEntries }); }, t('saved'))),
         btn([h('span', { html: icon('wheel') }), t('spin')], (e) => act(e.currentTarget, async () => { const r = await call('wheel:spin'); setTimeout(() => { resultEl.textContent = `${t('last_result')}: ${r.result}`; }, 6000); resultEl.textContent = t('spinning'); }), 'primary')),
       resultEl)));
-  return window.livex.on('giveaway:state', show);
+  loadRooms();
+  const iv = setInterval(loadRooms, 10_000);
+  const off = window.livex.on('giveaway:state', show);
+  return () => { clearInterval(iv); off(); };
 }
