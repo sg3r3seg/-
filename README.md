@@ -2,10 +2,10 @@
 
 ## ⬇️ הורדה והתקנה
 
-**[הורדת LiveX ל-Windows ←](https://github.com/sg3r3seg/-/releases/download/v1.0.0-preview/LiveX-Setup-1.0.0.exe)** · [דף הגרסה והוראות התקנה מלאות](https://github.com/sg3r3seg/-/releases/tag/v1.0.0-preview)
+**[הורדת LiveX ל-Windows ←](https://github.com/sg3r3seg/-/releases/download/v1.1.0-preview/LiveX-Setup-1.1.0.exe)** · [דף הגרסה והוראות התקנה מלאות](https://github.com/sg3r3seg/-/releases/tag/v1.1.0-preview)
 
-1. הורד והפעל את `LiveX-Setup-1.0.0.exe` (ב-SmartScreen: **More info → Run anyway**).
-2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.0.0-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
+1. הורד והפעל את `LiveX-Setup-1.1.0.exe` (ב-SmartScreen: **More info → Run anyway**).
+2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.1.0-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
 3. צור חשבון באתר שנפתח (`http://127.0.0.1:8787`), רכוש במצב Sandbox, והזן את קוד ההפעלה ב-LiveX.
 
 🔑 **[מדריך KEYNAME — איך מזינים את קוד ההפעלה](KEYNAME.md)**
