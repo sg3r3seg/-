@@ -30,7 +30,7 @@ function speakWeb(text, profile) {
 // Synthesize one utterance with a voice profile. Returns a playable URL or null (web speech used).
 export async function synth(text, profile) {
   if (profile.engine === 'ai' && profile.aiVoiceId) {
-    const b64 = await call('tts:synthAi', { text, voiceId: profile.aiVoiceId });
+    const b64 = await call('tts:synthAi', { text, voiceId: profile.aiVoiceId, modelId: profile.aiModelId || '' });
     return { url: b64ToUrl(b64, 'audio/mpeg') };
   }
   const info = window.__livex?.info || {};

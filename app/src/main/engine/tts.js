@@ -8,7 +8,7 @@ const DEFAULTS = {
   readUsername: true, maxLength: 200, blockedWords: [], filterProfanity: true, profanityMode: 'skip',
   skipCommands: true, skipLinks: true, onlyMods: false, maxQueue: 50, activeProfileId: 'default', outputDeviceId: 'default',
 };
-const DEFAULT_PROFILE = { id: 'default', name: 'Default', engine: 'system', voice: '', aiVoiceId: '', rate: 1, pitch: 1, volume: 1 };
+const DEFAULT_PROFILE = { id: 'default', name: 'Default', engine: 'system', voice: '', aiVoiceId: '', aiModelId: '', rate: 1, pitch: 1, volume: 1 };
 
 module.exports = (ctx) => {
   const queue = [];
@@ -82,7 +82,7 @@ module.exports = (ctx) => {
       const list = profiles().filter((x) => x.id !== p.id);
       const prof = {
         id: clampStr(p.id || uid(), 20), name: clampStr(p.name || 'Voice', 40), engine: ['system', 'ai'].includes(p.engine) ? p.engine : 'system',
-        voice: clampStr(p.voice, 200), aiVoiceId: clampStr(p.aiVoiceId, 64), sampleFile: clampStr(p.sampleFile, 200),
+        voice: clampStr(p.voice, 200), aiVoiceId: clampStr(p.aiVoiceId, 64), aiModelId: clampStr(p.aiModelId, 60), sampleFile: clampStr(p.sampleFile, 200),
         rate: num(p.rate, 1, 0.5, 2), pitch: num(p.pitch, 1, 0.5, 2), volume: num(p.volume, 1, 0, 1), consent: p.consent || undefined,
       };
       list.push(prof);

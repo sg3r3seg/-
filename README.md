@@ -2,10 +2,10 @@
 
 ## ⬇️ הורדה והתקנה
 
-**[הורדת LiveX ל-Windows ←](https://github.com/sg3r3seg/-/releases/download/v1.1.0-preview/LiveX-Setup-1.1.0.exe)** · [דף הגרסה והוראות התקנה מלאות](https://github.com/sg3r3seg/-/releases/tag/v1.1.0-preview)
+**[הורדת LiveX ל-Windows ←](https://github.com/sg3r3seg/-/releases/download/v1.2.0-preview/LiveX-Setup-1.2.0.exe)** · [דף הגרסה והוראות התקנה מלאות](https://github.com/sg3r3seg/-/releases/tag/v1.2.0-preview)
 
-1. הורד והפעל את `LiveX-Setup-1.1.0.exe` (ב-SmartScreen: **More info → Run anyway**).
-2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.1.0-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
+1. הורד והפעל את `LiveX-Setup-1.2.0.exe` (ב-SmartScreen: **More info → Run anyway**).
+2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.2.0-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
 3. צור חשבון באתר שנפתח (`http://127.0.0.1:8787`), רכוש במצב Sandbox, והזן את קוד ההפעלה ב-LiveX.
 
 🔑 **[מדריך KEYNAME — איך מזינים את קוד ההפעלה](KEYNAME.md)**
@@ -156,6 +156,17 @@ Overlays מקומיים ל-OBS (‏`127.0.0.1:4777`, עם מפתח לכל התק
 
 10 אוטומציות מגיעות עם LiveX: צ׳אט פרטי לזוכה בהגרלה, קוד QR לזוכה בשידור, תודה לעוקבים חדשים, תודה על מתנות, תודה למנויים, תודה על Super Chat ו-Bits, ברכה לריידים, חגיגת הגעה ליעד, אתגר שהושלם, והטיימר הסתיים. **אי אפשר למחוק או לערוך אותן**, גם לא דרך ה-API (`LOCKED`). אפשר רק להפעיל או לכבות כל אחת, ולראות תצוגה מקדימה של ההודעה (שלא נשלחת). הן מגיבות רק לאירועים אמיתיים (התראות בדיקה לא מפעילות אותן), יש להן הגבלת תדירות נגד הצפה, והן כתובות בשפת האפליקציה.
 
+## קולות ElevenLabs
+
+ב-**Voice Studio** מחברים את חשבון ה-elevenlabs.io של היוצר/ת. יוצרים מפתח API בכתובת elevenlabs.io/app/settings/api-keys, עם הרשאות Voices ו-Text to Speech, ומדביקים אותו פעם אחת בתוכנה. המפתח נשלח לשרת LiveX ונשמר שם מוצפן (AES-256-GCM). האפליקציה לא שומרת אותו, והוא לא נכתב ללוגים. כל הקריאות ל-ElevenLabs עוברות דרך השרת.
+
+- **הקולות שלי:** כל הקולות בחשבון ה-ElevenLabs.
+- **ספריית ElevenLabs:** חיפוש לפי שם, שפה ומגדר, האזנה לדוגמה, ו"הוספה לקולות שלי" (`POST /v1/voices/add/{public_user_id}/{voice_id}`).
+- **יצירת קול חדש:** מהקלטה או מקובץ (MP3, WAV, M4A, OGG או WebM), ב-Instant Voice Cloning בחשבון של היוצר/ת. דורש הצהרת הסכמה של בעל/ת הקול, שנשמרת בשרת.
+- **מודל:** רשימת המודלים מגיעה מהחשבון (`GET /v1/models`). במצב "אוטומטי", לטקסט בעברית נבחר מודל שהחשבון מדווח שהוא תומך בעברית.
+- **שגיאות ברורות:** מפתח שגוי (409, לא ניתוק מ-LiveX), קרדיטים שנגמרו (429) והרשאה חסרה.
+- אם השרת מוגדר עם `ELEVENLABS_API_KEY` משלו, הוא משמש גיבוי ליוצר/ת בלי חשבון. במצב הזה מוצגים רק הקולות המובנים והקולות שהיוצר/ת עצמו/ה יצר/ה, ואף פעם לא קולות של יוצרים אחרים.
+
 ## TTS
 
 קולות Windows (SAPI, כולל עברית אם מותקנת חבילת דיבור) מרונדרים ל-WAV ומושמעים בהתקן השמע שנבחר. תור, השהיה/המשך, דילוג, ניקוי, חסימת מילים (התאמה למילה שלמה), סינון פוגעני, הגבלת אורך, Overlay. ‏Voice Studio: פרופילים, תצוגה מקדימה, הקלטה/העלאה. קולות AI ושיבוט קול — דרך השרת בלבד (`ELEVENLABS_API_KEY`), עם בדיקת רישיון TTS בכל בקשה, ושיבוט רק עם הצהרת הסכמה מפורשת שנשמרת בשרת. כל עוד הספק לא הוגדר — מוצג "לא זמין".
@@ -163,9 +174,10 @@ Overlays מקומיים ל-OBS (‏`127.0.0.1:4777`, עם מפתח לכל התק
 ## בדיקות
 
 ```bash
-cd server && npm test   # 46 בדיקות: 12 תרחישי החובה, brute force, תפוגה, idempotency, rotation, איפוס סיסמה, הרשאת TTS, OAuth (state, PKCE, ביטול, כשל, קישור משומש, refresh, revoke) וצ׳אט זוכים (זיהוי הזוכה, דחיית חשבון אחר, הצפנה, סגירה)
+cd server && npm test   # 54 בדיקות: 12 תרחישי החובה, brute force, תפוגה, idempotency, rotation, איפוס סיסמה, הרשאת TTS, OAuth (state, PKCE, ביטול, כשל, קישור משומש, refresh, revoke) וצ׳אט זוכים (זיהוי הזוכה, דחיית חשבון אחר, הצפנה, סגירה)
 cd app && npm test      # 35 בדיקות: Lease/חתימות, מניפסט עדכון, סינון TTS, הרשאות, Overlay, מנוע
 cd app && xvfb-run -a npm run test:e2e-oauth     # 31 בדיקות קצה-לקצה של חשבונות רשתות באפליקציה האמיתית מול ספק OAuth מדומה
+cd app && xvfb-run -a npm run test:e2e-elevenlabs  # 14 בדיקות קצה-לקצה: חיבור ElevenLabs, ספרייה, עברית, יצירת קול
 cd app && xvfb-run -a npm run test:e2e-winners   # 37 בדיקות קצה-לקצה: הגרלה מצ׳אט אמיתי, QR בשידור, צ׳אט פרטי עם הזוכה, הודעה פרטית, חשבון זר נדחה, זוכה שלא נמצא, אוטומציות נעולות
 ```
 

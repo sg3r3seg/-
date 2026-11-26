@@ -255,5 +255,5 @@ test('TTS AI endpoints require a TTS license and report missing provider honestl
   const { code } = await buy(u, 'TTS');
   await activate(s, code);
   const r2 = await call('GET', '/api/tts/ai/voices', { token: s.token, device: s.device });
-  assert.equal(r2.status, 503); assert.equal(r2.body.error, 'AI_PROVIDER_NOT_CONFIGURED');
+  assert.equal(r2.status, 503); assert.equal(r2.body.error, 'ELEVENLABS_NOT_CONNECTED'); // the creator connects their own ElevenLabs account
 });

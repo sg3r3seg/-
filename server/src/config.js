@@ -73,6 +73,8 @@ const config = {
   ai: {
     elevenLabsKey: env('ELEVENLABS_API_KEY', ''),
     elevenLabsModel: env('ELEVENLABS_MODEL', 'eleven_multilingual_v2'),
+    // Test-only override of the ElevenLabs API base (ignored in production).
+    elevenLabsBase: env('ELEVENLABS_API_URL', ''),
   },
 };
 

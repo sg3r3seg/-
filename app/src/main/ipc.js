@@ -246,7 +246,14 @@ function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
   handle('tts:deleteProfile', 'tts', (id) => ctx.tts.deleteProfile(s(id, 20)));
   handle('tts:aiStatus', 'tts', () => session.authed('GET', '/api/tts/ai/status'));
   handle('tts:aiVoices', 'tts', async () => (await session.authed('GET', '/api/tts/ai/voices')).voices);
-  handle('tts:synthAi', 'tts', async (o) => { o = obj(o); const buf = await session.authed('POST', '/api/tts/ai/synthesize', { body: { text: s(o.text, 500), voiceId: s(o.voiceId, 64) }, raw: true, timeoutMs: 30000 }); return buf.toString('base64'); });
+  handle('tts:synthAi', 'tts', async (o) => { o = obj(o); const buf = await session.authed('POST', '/api/tts/ai/synthesize', { body: { text: s(o.text, 500), voiceId: s(o.voiceId, 64), modelId: s(o.modelId, 60) || undefined }, raw: true, timeoutMs: 30000 }); return buf.toString('base64'); });
+  // ElevenLabs account of the creator: the key is sent once to the LiveX server, which
+  // stores it encrypted. The app never saves it.
+  handle('tts:aiConnect', 'tts', (apiKey) => session.authed('POST', '/api/tts/ai/connect', { body: { apiKey: s(apiKey, 200).trim() } }));
+  handle('tts:aiDisconnect', 'tts', () => session.authed('POST', '/api/tts/ai/disconnect', { body: {} }));
+  handle('tts:aiModels', 'tts', async () => (await session.authed('GET', '/api/tts/ai/models')).models);
+  handle('tts:aiLibrary', 'tts', async (q) => { q = obj(q); const p = new URLSearchParams(); if (q.search) p.set('search', s(q.search, 80)); if (q.language) p.set('language', s(q.language, 8)); if (q.gender) p.set('gender', s(q.gender, 10)); return session.authed('GET', `/api/tts/ai/library?${p}`); });
+  handle('tts:aiLibraryAdd', 'tts', (o) => { o = obj(o); return session.authed('POST', '/api/tts/ai/library/add', { body: { publicOwnerId: s(o.publicOwnerId, 100), voiceId: s(o.voiceId, 64), name: s(o.name, 60) } }); });
   handle('tts:aiClone', 'tts', async (o) => {
     o = obj(o);
     if (o.consent !== true) throw coded('CONSENT_REQUIRED', 'Explicit consent is required');

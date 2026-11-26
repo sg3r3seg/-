@@ -1,7 +1,7 @@
 {
   "name": "livex",
   "productName": "LiveX",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "LiveX — ONE PLATFORM. EVERY CREATOR. Live-stream management for creators.",
   "author": "LiveX",
   "license": "UNLICENSED",
@@ -13,7 +13,8 @@
     "icons": "node scripts/make-icons.js",
     "dist:win": "node scripts/build-installer.js",
     "test:e2e-oauth": "node test/e2e/oauth.e2e.js",
-    "test:e2e-winners": "node test/e2e/winners.e2e.js"
+    "test:e2e-winners": "node test/e2e/winners.e2e.js",
+    "test:e2e-elevenlabs": "node test/e2e/elevenlabs.e2e.js"
   },
   "dependencies": {
     "qrcode": "1.5.4",

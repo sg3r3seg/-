@@ -82,8 +82,16 @@ export async function voiceStudio(root, app) {
   const isWin = app.info?.platform === 'win32';
   let systemVoices = [];
   try { systemVoices = isWin ? await call('tts:systemVoices') : speechSynthesis.getVoices().map((v) => ({ name: v.name, culture: v.lang })); } catch { systemVoices = []; }
-  let ai = { configured: false }; let aiVoices = []; let aiError = '';
-  try { ai = await call('tts:aiStatus'); if (ai.configured) aiVoices = await call('tts:aiVoices'); } catch (e) { aiError = errText(e); }
+  let ai = { configured: false, account: { connected: false } }; let aiVoices = []; let aiModels = []; let aiError = '';
+  async function loadAi() {
+    aiError = '';
+    try {
+      ai = await call('tts:aiStatus');
+      aiVoices = ai.configured ? await call('tts:aiVoices') : [];
+      aiModels = ai.configured ? await call('tts:aiModels').catch(() => []) : [];
+    } catch (e) { aiError = errText(e); aiVoices = []; }
+  }
+  await loadAi();
 
   const listEl = h('div', { class: 'profile-list' });
   const editor = h('div');
@@ -92,18 +100,21 @@ export async function voiceStudio(root, app) {
       h('button', { class: 'btn primary wide', onclick: () => edit({ name: t('new_profile'), engine: 'system', rate: 1, pitch: 1, volume: 1 }) }, h('span', { html: icon('plus') }), t('new_profile')));
   }
   function edit(p) {
+    editor.dataset.profile = p.id || '';
     const name = input({ value: p.name, maxlength: 40 });
     const engine = select([{ value: 'system', label: t('system_voice') }, { value: 'ai', label: t('ai_voice') }], p.engine);
     const voiceSel = select([{ value: '', label: t('default_voice') }, ...systemVoices.map((v) => ({ value: v.name, label: `${v.name} (${v.culture})` }))], p.voice || '');
     const aiSel = select([{ value: '', label: '—' }, ...aiVoices.map((v) => ({ value: v.id, label: `${v.name}${v.category ? ` · ${v.category}` : ''}` }))], p.aiVoiceId || '');
+    // Model: "automatic" picks, for Hebrew text, a model your ElevenLabs account reports as supporting Hebrew.
+    const modelSel = select([{ value: '', label: t('xi_model_auto') }, ...aiModels.map((m) => ({ value: m.id, label: `${m.name}${m.hebrew ? ` · ${t('xi_hebrew')}` : ''}` }))], p.aiModelId || '');
     const slider = (val, min, max, step) => h('input', { type: 'range', class: 'range', min, max, step, value: val });
     const rate = slider(p.rate ?? 1, 0.5, 2, 0.05); const pitch = slider(p.pitch ?? 1, 0.5, 2, 0.05); const volume = slider(p.volume ?? 1, 0, 1, 0.05);
     const sample = input({ value: t('preview_sample'), maxlength: 200 });
     const sysField = field(t('system_voice'), voiceSel, systemVoices.length ? (isWin ? t('system_voices_hint') : '') : t('no_system_voices'));
-    const aiField = field(t('ai_voice'), aiSel, ai.configured ? '' : (aiError || t('ai_not_configured')));
+    const aiField = h('div', { class: 'grid g2' }, field(t('ai_voice'), aiSel, ai.configured ? '' : (aiError || t('xi_connect_first'))), field(t('xi_model'), modelSel, t('xi_model_hint')));
     const sync = () => { sysField.style.display = engine.value === 'system' ? '' : 'none'; aiField.style.display = engine.value === 'ai' ? '' : 'none'; };
     engine.onchange = sync; sync();
-    const current = () => ({ ...p, name: name.value, engine: engine.value, voice: voiceSel.value, aiVoiceId: aiSel.value, rate: +rate.value, pitch: +pitch.value, volume: +volume.value });
+    const current = () => ({ ...p, name: name.value, engine: engine.value, voice: voiceSel.value, aiVoiceId: aiSel.value, aiModelId: modelSel.value, rate: +rate.value, pitch: +pitch.value, volume: +volume.value });
     editor.replaceChildren(card(p.id ? `${t('edit_profile')}: ${p.name}` : t('new_profile'),
       h('div', { class: 'grid g2' }, field(t('profile_name'), name), field(t('voice_engine'), engine)), sysField, aiField,
       h('div', { class: 'grid g3' }, field(`${t('speed')}`, rate), field(t('pitch'), pitch), field(t('volume'), volume)),
@@ -142,12 +153,60 @@ export async function voiceStudio(root, app) {
     if (!consent.checked) throw new Error(t('consent_required'));
     const r = await call('tts:aiClone', { name: cloneName.value, voiceOwnerName: owner.value, consentStatement: statement.value, consent: true, audioBase64: await blobToB64(recBlob), mimeType: recBlob.type || 'audio/webm' });
     await call('tts:saveProfile', { name: cloneName.value || 'AI voice', engine: 'ai', aiVoiceId: r.voiceId, rate: 1, pitch: 1, volume: 1, consent: { owner: owner.value, at: Date.now() } });
-    profiles = (await call('tts:get')).profiles; renderList();
+    profiles = (await call('tts:get')).profiles; renderList(); await loadAi(); refreshAll();
   }, t('ai_voice_created'));
+
+  // --- ElevenLabs account (connected in the app; key kept encrypted on the LiveX server) ---
+  const xiCard = h('div');
+  const libResults = h('div', { class: 'xi-lib' });
+  function renderXi() {
+    const a = ai.account || {};
+    const keyInput = input({ type: 'password', placeholder: t('xi_key_placeholder'), autocomplete: 'off', spellcheck: 'false' });
+    xiCard.replaceChildren(card(t('xi_title'),
+      h('p', { class: 'muted small' }, t('xi_intro')),
+      a.connected
+        ? h('div', { class: 'row between xi-acct' },
+          h('div', { class: 'row' }, badge(`✓ ${t('xi_connected')}`, 'ok'), h('b', {}, a.name || 'ElevenLabs'), a.tier ? badge(a.tier) : null, h('span', { class: 'muted small mono' }, `••••${a.keyHint}`)),
+          h('div', { class: 'row' },
+            h('button', { class: 'btn sm', onclick: (e) => act(e.currentTarget, async () => { await loadAi(); refreshAll(); }) }, h('span', { html: icon('refresh', 14) }), t('refresh')),
+            h('button', { class: 'btn sm danger', onclick: async (e) => { if (!(await confirmBox(t('xi_disconnect_confirm'), true))) return; await act(e.currentTarget, async () => { await call('tts:aiDisconnect'); await loadAi(); refreshAll(); }); } }, t('disconnect'))))
+        : h('div', { class: 'stack sm' },
+          field(t('xi_key'), keyInput, h('span', {}, t('xi_key_where'), ' ', h('a', { href: 'https://elevenlabs.io/app/settings/api-keys', target: '_blank', rel: 'noopener' }, 'elevenlabs.io → API Keys'))),
+          h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: (e) => act(e.currentTarget, async () => { if (!keyInput.value.trim()) throw new Error(t('xi_key_missing')); await call('tts:aiConnect', keyInput.value.trim()); keyInput.value = ''; await loadAi(); refreshAll(); }, t('xi_connected_toast')) }, h('span', { html: icon('plug', 14) }), t('xi_connect'))),
+          ai.via === 'livex' ? h('div', { class: 'msg show info small' }, t('xi_livex_fallback')) : null),
+      aiError ? h('div', { class: 'msg show err' }, aiError) : null,
+      a.connected ? h('div', { class: 'muted small' }, `${t('xi_voices_count')}: ${aiVoices.length}`) : null));
+  }
+  // Voice Library search (ElevenLabs community voices) -> "Add to my voices"
+  const libSearch = input({ placeholder: t('xi_lib_search'), maxlength: 80 });
+  const libLang = select([{ value: '', label: t('xi_any_language') }, { value: 'he', label: 'עברית' }, { value: 'en', label: 'English' }, { value: 'ar', label: 'العربية' }, { value: 'ru', label: 'Русский' }, { value: 'es', label: 'Español' }], 'he');
+  async function searchLib() {
+    const r = await call('tts:aiLibrary', { search: libSearch.value.trim(), language: libLang.value });
+    libResults.replaceChildren(...(r.voices.length ? r.voices.map((v) => h('div', { class: 'xi-voice' },
+      h('div', { class: 'grow' }, h('b', {}, v.name), h('div', { class: 'muted small' }, [v.language, v.accent, v.gender, v.age, v.useCase].filter(Boolean).join(' · ')), v.description ? h('div', { class: 'small' }, v.description) : null),
+      v.previewUrl ? h('audio', { controls: true, preload: 'none', src: v.previewUrl, class: 'xi-preview' }) : null,
+      h('button', { class: 'btn sm primary', onclick: (e) => act(e.currentTarget, async () => { await call('tts:aiLibraryAdd', { publicOwnerId: v.publicOwnerId, voiceId: v.id, name: v.name.slice(0, 60) }); await loadAi(); refreshAll(); }, t('xi_added')) }, h('span', { html: icon('plus', 14) }), t('xi_add')))) : [empty(t('xi_lib_none'))]));
+  }
+  const libCard = h('div');
+  function renderLib() {
+    libCard.replaceChildren(ai.account?.connected ? card(t('xi_lib_title'), h('p', { class: 'muted small' }, t('xi_lib_hint')),
+      h('div', { class: 'row' }, libSearch, libLang, h('button', { class: 'btn', onclick: (e) => act(e.currentTarget, searchLib) }, h('span', { html: icon('globe', 14) }), t('xi_lib_go'))), libResults) : '');
+  }
+  function refreshAll() {
+    renderXi(); renderLib();
+    cloneBtn.disabled = !ai.configured;
+    cloneWarn.replaceChildren(ai.configured ? '' : h('div', { class: 'msg show warn' }, aiError || t('xi_connect_first')));
+    const cur = profiles.find((x) => x.id === editor.dataset.profile) || profiles[0];
+    edit(cur);
+  }
+  const cloneWarn = h('div');
 
   renderList();
   edit(profiles[0]);
+  renderXi(); renderLib();
+  cloneWarn.replaceChildren(ai.configured ? '' : h('div', { class: 'msg show warn' }, aiError || t('xi_connect_first')));
   root.append(
+    xiCard,
     h('div', { class: 'grid g1-2' }, card(t('voice_profiles'), listEl), editor),
     card(t('custom_voice'),
       h('p', { class: 'muted' }, t('custom_voice_hint')),
@@ -155,8 +214,9 @@ export async function voiceStudio(root, app) {
       h('div', { class: 'grid g2' }, field(t('voice_name'), cloneName), field(t('voice_owner_name'), owner)),
       field(t('consent_statement'), statement),
       h('label', { class: 'consent' }, consent, h('span', {}, t('consent_checkbox'))),
-      ai.configured ? null : h('div', { class: 'msg show warn' }, aiError || t('ai_not_configured')),
+      cloneWarn,
       cloneBtn),
+    libCard,
   );
   return () => { if (mediaRec && mediaRec.state === 'recording') mediaRec.stop(); };
 }

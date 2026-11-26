@@ -185,6 +185,17 @@ CREATE TABLE IF NOT EXISTS oauth_flows (
   expires_at  INTEGER NOT NULL
 );
 
+-- A creator's own ElevenLabs account (connected in the app). The API key is stored
+-- only here, encrypted with the server's AES-256-GCM key; the app never keeps it.
+CREATE TABLE IF NOT EXISTS elevenlabs_accounts (
+  user_id      INTEGER PRIMARY KEY REFERENCES users(id),
+  key_enc      TEXT NOT NULL,
+  key_hint     TEXT NOT NULL,          -- last 4 characters, to show which key is connected
+  account_name TEXT,
+  tier         TEXT,
+  connected_at INTEGER NOT NULL,
+  last_ok_at   INTEGER
+);
 CREATE TABLE IF NOT EXISTS voice_consents (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id          INTEGER NOT NULL,
