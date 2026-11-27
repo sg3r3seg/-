@@ -55,6 +55,10 @@ const mail = (to, tag) => fs.readdirSync(`${DATA}/outbox`).sort().map((f) => JSO
     await win.fill('input[type=password]', KEY); await win.click('button:has-text("חיבור ElevenLabs")');
     await until(async () => /מחובר/.test(await win.textContent('.xi-acct')));
     ok('Connected: account name, plan and only the last 4 key characters shown', /Shay/.test(await win.textContent('.xi-acct')) && /creator/.test(await win.textContent('.xi-acct')) && /••••wxyz/.test(await win.textContent('.xi-acct')));
+    await win.click('button:has-text("בדיקת חיבור")');
+    await until(async () => (await win.$$('.xi-step')).length >= 6, 15000);
+    const steps = await win.$$eval('.xi-step', (els) => els.map((e) => e.className.includes('ok')));
+    ok('"Test connection" runs every step against ElevenLabs and all pass', steps.length === 6 && steps.every(Boolean), JSON.stringify(steps));
     const secureFile = fs.readFileSync(path.join(WORK, 'ud', 'LiveX', 'secure.bin')).toString('latin1');
     const settingsDir = path.join(WORK, 'ud', 'LiveX');
     const anyLocal = fs.readdirSync(settingsDir).filter((f) => { try { return fs.lstatSync(path.join(settingsDir, f)).isFile(); } catch { return false; } }).some((f) => fs.readFileSync(path.join(settingsDir, f)).toString('latin1').includes(KEY));

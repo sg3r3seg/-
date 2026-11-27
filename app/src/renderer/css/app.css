@@ -365,3 +365,9 @@ details summary { cursor: pointer; margin: 6px 0; }
 .xi-lib { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .xi-voice { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); flex-wrap: wrap; }
 .xi-preview { height: 34px; max-width: 260px; }
+.xi-diag { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.xi-step { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); }
+.xi-step.ok .xi-dot { color: var(--ok); font-weight: 900; }
+.xi-step.err { border-color: rgba(255,92,122,.4); }
+.xi-step.err .xi-dot { color: var(--err); font-weight: 900; }
+.xi-steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; color: var(--muted); }

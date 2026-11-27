@@ -111,3 +111,26 @@ test('disconnect removes the key', async () => {
   assert.equal((await A('GET', '/api/tts/ai/status')).body.account.connected, false);
   assert.equal(require('../src/db').get().prepare('SELECT COUNT(*) AS n FROM elevenlabs_accounts WHERE key_hint=?').get('abcd').n, 0);
 });
+
+test('free account blocked by ElevenLabs is NOT reported as a bad key; reasons pass through', async () => {
+  const F = await account('Free', 'TTS');
+  const c = await F('POST', '/api/tts/ai/connect', { apiKey: '  "k-free-key-123456789abcdz"\n' });
+  assert.equal(c.status, 200, 'pasted key with spaces/quotes/newline is cleaned');
+  const sp = await F('POST', '/api/tts/ai/synthesize', { text: 'שלום', voiceId: 'premade00001' });
+  assert.equal(sp.status, 409); assert.equal(sp.body.error, 'ELEVENLABS_FREE_BLOCKED');
+  assert.equal(sp.body.provider.status, 'detected_unusual_activity'); assert.match(sp.body.provider.message, /Free Tier usage disabled/);
+  const cl = await F('POST', '/api/tts/ai/clone', { name: 'v', voiceOwnerName: 'Free', consentStatement: 'I own this voice ok', consent: true, audioBase64: Buffer.alloc(20000, 1).toString('base64'), mimeType: 'audio/mpeg' });
+  assert.equal(cl.body.error, 'ELEVENLABS_PLAN_REQUIRED'); assert.match(cl.body.provider.message, /instant voice cloning/);
+  const d = (await F('POST', '/api/tts/ai/diagnose', {})).body;
+  const by = Object.fromEntries(d.steps.map((x) => [x.id, x]));
+  assert.ok(by.connected.ok && by.voices.ok && by.user.ok && by.models.ok);
+  assert.equal(by.speech.ok, false); assert.equal(by.speech.code, 'ELEVENLABS_FREE_BLOCKED'); assert.equal(by.speech.providerStatus, 'detected_unusual_activity');
+});
+
+test('diagnose on a healthy account: every step passes, including a short speech test', async () => {
+  const G = await account('Good', 'TTS');
+  await G('POST', '/api/tts/ai/connect', { apiKey: 'k-good-key-123456789abcdef' });
+  const d = (await G('POST', '/api/tts/ai/diagnose', {})).body;
+  assert.deepEqual(d.steps.map((x) => [x.id, x.ok]), [['connected', true], ['reach', true], ['voices', true], ['user', true], ['models', true], ['speech', true]]);
+  assert.match(d.steps.at(-1).detail, /eleven_v3/);
+});

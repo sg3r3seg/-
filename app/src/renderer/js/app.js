@@ -212,6 +212,12 @@ function renderShell() {
   navigate(app.current && VIEWS.some((v) => v.id === app.current) ? app.current : 'dashboard');
 }
 
+const serverOlder = (srv, appV) => {
+  if (!srv || !appV) return false;
+  const a = String(srv).split('.').map(Number); const b = String(appV).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) < (b[i] || 0); }
+  return false;
+};
 function updateChrome() {
   if (!shellEls) return;
   const st = app.state;
@@ -223,6 +229,10 @@ function updateChrome() {
     b.replaceChildren(...[h('span', { html: icon(n.code === 'OFFLINE' ? 'wifiOff' : 'shield') }),
       h('span', {}, n.code === 'OFFLINE' ? `${t('offline_mode')} ${fmtDate(n.until)}` : t(n.text)),
       n.code !== 'OFFLINE' ? h('button', { class: 'btn sm', onclick: () => navigate('account') }, t('nav_account')) : null].filter(Boolean));
+  } else if (serverOlder(st.server?.version, app.info?.version)) {
+    // The local test server is older than the app: new screens would fail with "Not found".
+    b.className = 'banner warn';
+    b.replaceChildren(h('span', { html: icon('shield') }), h('span', {}, t('server_outdated').replace('{s}', st.server.version).replace('{a}', app.info.version)));
   } else b.className = 'banner hidden';
   // Status chips
   const server = st.offline ? h('span', { class: 'chip warn', html: `${icon('wifiOff', 14)}<span>${t('offline')}</span>` }) : h('span', { class: 'chip ok', html: `${icon('wifi', 14)}<span>${t('online')}</span>` });

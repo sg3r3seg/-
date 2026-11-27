@@ -250,6 +250,7 @@ function register(ctx, { rendererUrl, winnerChatUrl, getWindow, logs }) {
   // ElevenLabs account of the creator: the key is sent once to the LiveX server, which
   // stores it encrypted. The app never saves it.
   handle('tts:aiConnect', 'tts', (apiKey) => session.authed('POST', '/api/tts/ai/connect', { body: { apiKey: s(apiKey, 200).trim() } }));
+  handle('tts:aiDiagnose', 'tts', () => session.authed('POST', '/api/tts/ai/diagnose', { body: {}, timeoutMs: 60000 }));
   handle('tts:aiDisconnect', 'tts', () => session.authed('POST', '/api/tts/ai/disconnect', { body: {} }));
   handle('tts:aiModels', 'tts', async () => (await session.authed('GET', '/api/tts/ai/models')).models);
   handle('tts:aiLibrary', 'tts', async (q) => { q = obj(q); const p = new URLSearchParams(); if (q.search) p.set('search', s(q.search, 80)); if (q.language) p.set('language', s(q.language, 8)); if (q.gender) p.set('gender', s(q.gender, 10)); return session.authed('GET', `/api/tts/ai/library?${p}`); });

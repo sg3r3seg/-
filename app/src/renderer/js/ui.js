@@ -43,7 +43,10 @@ export async function call(channel, ...args) {
 export function errText(e) {
   const key = `err_${e.code}`;
   const tr = t(key);
-  return tr !== key ? tr : (e.message || String(e));
+  const base = tr !== key ? tr : (e.message || String(e));
+  // External providers (e.g. ElevenLabs): also show their own reason, so problems are diagnosable.
+  const p = e.data?.provider;
+  return p?.message ? `${base} — ${t('provider_says')}: ${p.message}${p.status ? ` (${p.status})` : ''}` : base;
 }
 
 let toastWrap;

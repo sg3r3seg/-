@@ -46,13 +46,18 @@ async function xi(key, method, path, { json, form, accept } = {}) {
   }).catch(() => fail(502, 'ELEVENLABS_UNREACHABLE', 'ElevenLabs could not be reached. Try again.'));
   if (res.ok) return res;
   const j = await res.json().catch(() => ({}));
-  const st = j?.detail?.status || j?.detail?.code || '';
+  const st = String(j?.detail?.status || j?.detail?.code || '');
   const msg = (typeof j?.detail === 'string' ? j.detail : j?.detail?.message) || `ElevenLabs error ${res.status}`;
-  // Never answer 401 here: in the app a 401 means "LiveX session expired".
-  if (/quota|credits|limit/i.test(st + msg) || res.status === 429) fail(429, 'ELEVENLABS_QUOTA', `ElevenLabs: ${msg}`);
-  if (res.status === 401 || /invalid_api_key|unauthorized/i.test(st)) fail(409, 'ELEVENLABS_KEY_INVALID', 'ElevenLabs did not accept the API key. Connect the account again with a valid key.');
-  if (/missing_permissions/i.test(st)) fail(409, 'ELEVENLABS_PERMISSION', `ElevenLabs: this API key is missing a permission (${msg})`);
-  fail(502, 'ELEVENLABS_ERROR', `ElevenLabs: ${msg}`);
+  const extra = { provider: { http: res.status, status: st || null, message: String(msg).slice(0, 400) } };
+  // The app gets ElevenLabs' own reason (status + message). Never answer 401: in the app
+  // a 401 means "LiveX session expired" and would sign the creator out of LiveX.
+  if (/invalid_api_key/i.test(st) || (res.status === 401 && !st && /invalid.*key|api key/i.test(msg))) fail(409, 'ELEVENLABS_KEY_INVALID', 'ElevenLabs did not accept the API key. Check it and connect again.', extra);
+  if (/missing_permissions/i.test(st)) fail(409, 'ELEVENLABS_PERMISSION', `ElevenLabs: the API key is missing a permission — ${msg}`, extra);
+  if (/quota_exceeded|insufficient|credits/i.test(st + msg) || res.status === 429) fail(429, 'ELEVENLABS_QUOTA', `ElevenLabs: ${msg}`, extra);
+  if (/unusual_activity/i.test(st)) fail(409, 'ELEVENLABS_FREE_BLOCKED', `ElevenLabs blocked free-tier API use for this account — ${msg}`, extra);
+  if (res.status === 402 || /payment|subscription|upgrade|paid|plan|tier|not_allowed|can_not_use|cannot_use/i.test(st + ' ' + msg)) fail(409, 'ELEVENLABS_PLAN_REQUIRED', `ElevenLabs: ${msg}`, extra);
+  if (/voice_not_found/i.test(st)) fail(404, 'ELEVENLABS_VOICE_NOT_FOUND', `ElevenLabs: ${msg}`, extra);
+  fail(502, 'ELEVENLABS_ERROR', `ElevenLabs (${res.status}${st ? ` ${st}` : ''}): ${msg}`, extra);
 }
 const VOICE_ID = /^[A-Za-z0-9]{8,64}$/;
 const isHebrew = (t) => /[֐-׿]/.test(t);
@@ -80,7 +85,9 @@ r.get('/ai/status', h(async (req, res) => {
 
 // Connect / replace the creator's ElevenLabs account (key from elevenlabs.io → API Keys).
 r.post('/ai/connect', limiter('xi-connect', 10, 600_000, (req) => req.user.id), h(async (req, res) => {
-  const key = str(req.body?.apiKey, { min: 20, max: 200, name: 'apiKey', pattern: /^[A-Za-z0-9_-]+$/ });
+  // Tolerate what copy-paste brings along (spaces, line breaks, quotes, "xi-api-key:" prefix).
+  const cleaned = String(req.body?.apiKey || '').replace(/^\s*(xi-api-key\s*[:=]\s*)?/i, '').replace(/["'`\s]/g, '');
+  const key = str(cleaned, { min: 20, max: 200, name: 'apiKey', pattern: /^[A-Za-z0-9_-]+$/ });
   await xi(key, 'GET', '/voices'); // proves the key works (needs the Voices: read permission)
   let name = null; let tier = null;
   try { const u = await (await xi(key, 'GET', '/user')).json(); name = u.first_name || null; tier = u.subscription?.tier || null; } catch { /* key without user_read: fine */ }
@@ -90,6 +97,31 @@ r.post('/ai/connect', limiter('xi-connect', 10, 600_000, (req) => req.user.id), 
   db.audit(req.user.id, 'elevenlabs_connected', { tier });
   res.json({ connected: true, name, tier, keyHint: key.slice(-4) });
 }));
+// Step-by-step check of the creator's ElevenLabs connection (what works, what ElevenLabs says).
+r.post('/ai/diagnose', limiter('xi-diag', 10, 600_000, (req) => req.user.id), h(async (req, res) => {
+  const a = own(req.user.id);
+  const steps = [];
+  const step = async (id, fn) => { try { const detail = await fn(); steps.push({ id, ok: true, detail: detail || '' }); return true; } catch (e) { steps.push({ id, ok: false, code: e.code || 'ERROR', detail: e.extra?.provider?.message || e.message, providerStatus: e.extra?.provider?.status || null }); return false; } };
+  if (!a) return res.json({ connected: false, steps: [{ id: 'connected', ok: false, code: 'ELEVENLABS_NOT_CONNECTED', detail: 'No ElevenLabs account connected' }] });
+  const key = C.decrypt(a.key_enc);
+  steps.push({ id: 'connected', ok: true, detail: `••••${a.key_hint}` });
+  await step('reach', async () => { const r0 = await fetch(`${XI()}/models`, { method: 'HEAD', signal: AbortSignal.timeout(10000) }).catch(() => null); if (!r0) fail(502, 'ELEVENLABS_UNREACHABLE', 'The LiveX server cannot reach api.elevenlabs.io (check the internet connection / firewall of the server computer)'); return 'api.elevenlabs.io'; });
+  let voices = [];
+  await step('voices', async () => { voices = (await (await xi(key, 'GET', '/voices')).json()).voices || []; return `${voices.length}`; });
+  await step('user', async () => { const u = await (await xi(key, 'GET', '/user')).json(); const sub = u.subscription || {}; return [sub.tier, sub.character_count !== undefined ? `${sub.character_count}/${sub.character_limit}` : null].filter(Boolean).join(' · '); });
+  let list = [];
+  await step('models', async () => { modelCache.delete(C.sha256(key)); list = await models(key); return list.map((m) => `${m.id}${m.hebrew ? ' (he)' : ''}`).join(', '); });
+  const voice = voices[0]?.voice_id;
+  if (voice) {
+    await step('speech', async () => {
+      const model = list.find((m) => m.hebrew)?.id || config.ai.elevenLabsModel;
+      const r1 = await xi(key, 'POST', `/text-to-speech/${voice}?output_format=mp3_44100_128`, { json: { text: 'בדיקה', model_id: model }, accept: 'audio/mpeg' });
+      const n = (await r1.arrayBuffer()).byteLength; return `${model} · ${n} bytes`;
+    });
+  }
+  res.json({ connected: true, steps });
+}));
+
 r.post('/ai/disconnect', h(async (req, res) => {
   db.get().prepare('DELETE FROM elevenlabs_accounts WHERE user_id=?').run(req.user.id);
   db.audit(req.user.id, 'elevenlabs_disconnected', {});

@@ -171,11 +171,23 @@ export async function voiceStudio(root, app) {
             h('button', { class: 'btn sm', onclick: (e) => act(e.currentTarget, async () => { await loadAi(); refreshAll(); }) }, h('span', { html: icon('refresh', 14) }), t('refresh')),
             h('button', { class: 'btn sm danger', onclick: async (e) => { if (!(await confirmBox(t('xi_disconnect_confirm'), true))) return; await act(e.currentTarget, async () => { await call('tts:aiDisconnect'); await loadAi(); refreshAll(); }); } }, t('disconnect'))))
         : h('div', { class: 'stack sm' },
-          field(t('xi_key'), keyInput, h('span', {}, t('xi_key_where'), ' ', h('a', { href: 'https://elevenlabs.io/app/settings/api-keys', target: '_blank', rel: 'noopener' }, 'elevenlabs.io → API Keys'))),
+          h('ol', { class: 'xi-steps small' }, ...t('xi_steps').split('|').map((x, i) => h('li', {}, i === 0 ? [x, ' ', h('a', { href: 'https://elevenlabs.io/app/settings/api-keys', target: '_blank', rel: 'noopener' }, 'elevenlabs.io/app/settings/api-keys')] : x))),
+          field(t('xi_key'), keyInput),
           h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: (e) => act(e.currentTarget, async () => { if (!keyInput.value.trim()) throw new Error(t('xi_key_missing')); await call('tts:aiConnect', keyInput.value.trim()); keyInput.value = ''; await loadAi(); refreshAll(); }, t('xi_connected_toast')) }, h('span', { html: icon('plug', 14) }), t('xi_connect'))),
           ai.via === 'livex' ? h('div', { class: 'msg show info small' }, t('xi_livex_fallback')) : null),
       aiError ? h('div', { class: 'msg show err' }, aiError) : null,
-      a.connected ? h('div', { class: 'muted small' }, `${t('xi_voices_count')}: ${aiVoices.length}`) : null));
+      a.connected ? h('div', { class: 'row between' }, h('span', { class: 'muted small' }, `${t('xi_voices_count')}: ${aiVoices.length}`),
+        h('button', { class: 'btn sm', onclick: (e) => act(e.currentTarget, runDiag) }, h('span', { html: icon('stetho', 14) }), t('xi_diag'))) : null,
+      diagEl));
+  }
+  // Connection test: each step with ElevenLabs' own answer (what works, what does not).
+  const diagEl = h('div', { class: 'xi-diag' });
+  async function runDiag() {
+    diagEl.replaceChildren(h('div', { class: 'muted small' }, t('xi_diag_running')));
+    const r = await call('tts:aiDiagnose');
+    diagEl.replaceChildren(...r.steps.map((st) => h('div', { class: `xi-step ${st.ok ? 'ok' : 'err'}` },
+      h('span', { class: 'xi-dot' }, st.ok ? '✓' : '✕'), h('b', {}, t(`xi_step_${st.id}`)),
+      h('span', { class: 'muted small grow' }, st.ok ? st.detail : `${t(`err_${st.code}`) !== `err_${st.code}` ? t(`err_${st.code}`) : ''} ${st.detail || ''}${st.providerStatus ? ` (${st.providerStatus})` : ''}`))));
   }
   // Voice Library search (ElevenLabs community voices) -> "Add to my voices"
   const libSearch = input({ placeholder: t('xi_lib_search'), maxlength: 80 });

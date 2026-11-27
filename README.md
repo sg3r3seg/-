@@ -2,10 +2,10 @@
 
 ## ⬇️ הורדה והתקנה
 
-**[הורדת LiveX ל-Windows ←](https://github.com/sg3r3seg/-/releases/download/v1.2.0-preview/LiveX-Setup-1.2.0.exe)** · [דף הגרסה והוראות התקנה מלאות](https://github.com/sg3r3seg/-/releases/tag/v1.2.0-preview)
+**[הורדת LiveX ל-Windows ←](https://github.com/sg3r3seg/-/releases/download/v1.2.1-preview/LiveX-Setup-1.2.1.exe)** · [דף הגרסה והוראות התקנה מלאות](https://github.com/sg3r3seg/-/releases/tag/v1.2.1-preview)
 
-1. הורד והפעל את `LiveX-Setup-1.2.0.exe` (ב-SmartScreen: **More info → Run anyway**).
-2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.2.0-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
+1. הורד והפעל את `LiveX-Setup-1.2.1.exe` (ב-SmartScreen: **More info → Run anyway**).
+2. בגרסת הבדיקה מפעילים גם את שרת LiveX על המחשב: התקן [Node.js 22](https://nodejs.org), הורד את [`LiveX-Test-Server.zip`](https://github.com/sg3r3seg/-/releases/download/v1.2.1-preview/LiveX-Test-Server.zip), חלץ לתוכו את קובץ המפתחות `livex-dev-server-keys.zip`, והפעל את `start-server.cmd`.
 3. צור חשבון באתר שנפתח (`http://127.0.0.1:8787`), רכוש במצב Sandbox, והזן את קוד ההפעלה ב-LiveX.
 
 🔑 **[מדריך KEYNAME — איך מזינים את קוד ההפעלה](KEYNAME.md)**
@@ -174,10 +174,10 @@ Overlays מקומיים ל-OBS (‏`127.0.0.1:4777`, עם מפתח לכל התק
 ## בדיקות
 
 ```bash
-cd server && npm test   # 54 בדיקות: 12 תרחישי החובה, brute force, תפוגה, idempotency, rotation, איפוס סיסמה, הרשאת TTS, OAuth (state, PKCE, ביטול, כשל, קישור משומש, refresh, revoke) וצ׳אט זוכים (זיהוי הזוכה, דחיית חשבון אחר, הצפנה, סגירה)
+cd server && npm test   # 56 בדיקות: 12 תרחישי החובה, brute force, תפוגה, idempotency, rotation, איפוס סיסמה, הרשאת TTS, OAuth (state, PKCE, ביטול, כשל, קישור משומש, refresh, revoke) וצ׳אט זוכים (זיהוי הזוכה, דחיית חשבון אחר, הצפנה, סגירה)
 cd app && npm test      # 35 בדיקות: Lease/חתימות, מניפסט עדכון, סינון TTS, הרשאות, Overlay, מנוע
 cd app && xvfb-run -a npm run test:e2e-oauth     # 31 בדיקות קצה-לקצה של חשבונות רשתות באפליקציה האמיתית מול ספק OAuth מדומה
-cd app && xvfb-run -a npm run test:e2e-elevenlabs  # 14 בדיקות קצה-לקצה: חיבור ElevenLabs, ספרייה, עברית, יצירת קול
+cd app && xvfb-run -a npm run test:e2e-elevenlabs  # 15 בדיקות קצה-לקצה: חיבור ElevenLabs, בדיקת חיבור, ספרייה, עברית, יצירת קול
 cd app && xvfb-run -a npm run test:e2e-winners   # 37 בדיקות קצה-לקצה: הגרלה מצ׳אט אמיתי, QR בשידור, צ׳אט פרטי עם הזוכה, הודעה פרטית, חשבון זר נדחה, זוכה שלא נמצא, אוטומציות נעולות
 ```
 

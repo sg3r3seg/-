@@ -1,6 +1,6 @@
 {
   "name": "livex-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "LiveX licensing, accounts, payments and update server",
   "main": "src/index.js",
