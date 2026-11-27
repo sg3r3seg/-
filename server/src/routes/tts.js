@@ -116,7 +116,7 @@ r.post('/ai/diagnose', limiter('xi-diag', 10, 600_000, (req) => req.user.id), h(
     await step('speech', async () => {
       const model = list.find((m) => m.hebrew)?.id || config.ai.elevenLabsModel;
       const r1 = await xi(key, 'POST', `/text-to-speech/${voice}?output_format=mp3_44100_128`, { json: { text: 'בדיקה', model_id: model }, accept: 'audio/mpeg' });
-      const n = (await r1.arrayBuffer()).byteLength; return `${model} · ${n} bytes`;
+      const n = (await r1.arrayBuffer()).byteLength; if (!n) fail(502, 'ELEVENLABS_ERROR', 'ElevenLabs returned empty audio'); return model;
     });
   }
   res.json({ connected: true, steps });

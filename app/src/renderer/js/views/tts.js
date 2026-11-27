@@ -76,6 +76,12 @@ export async function tts(root, app) {
 }
 
 // ------------------------------------------------------------- Voice Studio --
+// ElevenLabs voice attributes, shown in the app language (unknown values: readable as-is).
+const xiLabel = (kind, v) => {
+  if (!v) return '';
+  const k = `xi_${kind}_${String(v).toLowerCase()}`; const tr = t(k);
+  return tr !== k ? tr : String(v).replace(/_/g, ' ');
+};
 export async function voiceStudio(root, app) {
   const data = await call('tts:get');
   let profiles = data.profiles;
@@ -104,7 +110,7 @@ export async function voiceStudio(root, app) {
     const name = input({ value: p.name, maxlength: 40 });
     const engine = select([{ value: 'system', label: t('system_voice') }, { value: 'ai', label: t('ai_voice') }], p.engine);
     const voiceSel = select([{ value: '', label: t('default_voice') }, ...systemVoices.map((v) => ({ value: v.name, label: `${v.name} (${v.culture})` }))], p.voice || '');
-    const aiSel = select([{ value: '', label: '—' }, ...aiVoices.map((v) => ({ value: v.id, label: `${v.name}${v.category ? ` · ${v.category}` : ''}` }))], p.aiVoiceId || '');
+    const aiSel = select([{ value: '', label: '—' }, ...aiVoices.map((v) => ({ value: v.id, label: `${v.name}${v.category ? ` · ${xiLabel('cat', v.category)}` : ''}` }))], p.aiVoiceId || '');
     // Model: "automatic" picks, for Hebrew text, a model your ElevenLabs account reports as supporting Hebrew.
     const modelSel = select([{ value: '', label: t('xi_model_auto') }, ...aiModels.map((m) => ({ value: m.id, label: `${m.name}${m.hebrew ? ` · ${t('xi_hebrew')}` : ''}` }))], p.aiModelId || '');
     const slider = (val, min, max, step) => h('input', { type: 'range', class: 'range', min, max, step, value: val });
@@ -187,7 +193,7 @@ export async function voiceStudio(root, app) {
     const r = await call('tts:aiDiagnose');
     diagEl.replaceChildren(...r.steps.map((st) => h('div', { class: `xi-step ${st.ok ? 'ok' : 'err'}` },
       h('span', { class: 'xi-dot' }, st.ok ? '✓' : '✕'), h('b', {}, t(`xi_step_${st.id}`)),
-      h('span', { class: 'muted small grow' }, st.ok ? st.detail : `${t(`err_${st.code}`) !== `err_${st.code}` ? t(`err_${st.code}`) : ''} ${st.detail || ''}${st.providerStatus ? ` (${st.providerStatus})` : ''}`))));
+      h('span', { class: 'muted small grow' }, st.ok ? h('bdi', {}, st.detail) : [`${t(`err_${st.code}`) !== `err_${st.code}` ? t(`err_${st.code}`) : ''} `, h('bdi', {}, `${st.detail || ''}${st.providerStatus ? ` (${st.providerStatus})` : ''}`)]))));
   }
   // Voice Library search (ElevenLabs community voices) -> "Add to my voices"
   const libSearch = input({ placeholder: t('xi_lib_search'), maxlength: 80 });
@@ -195,7 +201,7 @@ export async function voiceStudio(root, app) {
   async function searchLib() {
     const r = await call('tts:aiLibrary', { search: libSearch.value.trim(), language: libLang.value });
     libResults.replaceChildren(...(r.voices.length ? r.voices.map((v) => h('div', { class: 'xi-voice' },
-      h('div', { class: 'grow' }, h('b', {}, v.name), h('div', { class: 'muted small' }, [v.language, v.accent, v.gender, v.age, v.useCase].filter(Boolean).join(' · ')), v.description ? h('div', { class: 'small' }, v.description) : null),
+      h('div', { class: 'grow' }, h('b', {}, v.name), h('div', { class: 'muted small' }, [xiLabel('lang', v.language), xiLabel('accent', v.accent), xiLabel('gender', v.gender), xiLabel('age', v.age), xiLabel('use', v.useCase)].filter(Boolean).join(' · ')), v.description ? h('div', { class: 'small' }, v.description) : null),
       v.previewUrl ? h('audio', { controls: true, preload: 'none', src: v.previewUrl, class: 'xi-preview' }) : null,
       h('button', { class: 'btn sm primary', onclick: (e) => act(e.currentTarget, async () => { await call('tts:aiLibraryAdd', { publicOwnerId: v.publicOwnerId, voiceId: v.id, name: v.name.slice(0, 60) }); await loadAi(); refreshAll(); }, t('xi_added')) }, h('span', { html: icon('plus', 14) }), t('xi_add')))) : [empty(t('xi_lib_none'))]));
   }
